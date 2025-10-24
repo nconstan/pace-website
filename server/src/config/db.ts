@@ -1,11 +1,16 @@
 import pkg from '@prisma/client';
+
 const { PrismaClient } = pkg;
 
-
-const globalForPrisma = globalThis as unknown as {
-  prisma: typeof PrismaClient | undefined
-}
-
-export const prisma = globalForPrisma.prisma ?? new PrismaClient();
-
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
+declare global {
+  var prisma: InstanceType<typeof PrismaClient> | undefined;  // Use InstanceType for the instance type
+  }
+  const prisma: InstanceType<typeof PrismaClient> =  // Use InstanceType here too
+  global.prisma ||
+  new PrismaClient({
+  log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+  });
+  if (process.env.NODE_ENV !== 'production') {
+  global.prisma = prisma;
+  }
+  export default prisma;

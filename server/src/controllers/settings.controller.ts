@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { prisma } from '../config/db.js';
+import prisma from '../config/db.js';
 import { asyncHandler } from '../middleware/error.js';
 import { CustomError } from '../middleware/error.js';
 

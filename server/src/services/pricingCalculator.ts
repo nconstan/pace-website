@@ -1,5 +1,5 @@
 import express, { Request, Response, Router } from 'express';
-import { prisma } from '../config/db.js';
+import prisma from '../config/db.js';
 import { asyncHandler } from '../middleware/error.js';
 import depreciationData from '../config/depreciationValues.json' with { type: 'json' };
 import { getVehicleInfo } from './vinLookup.js';

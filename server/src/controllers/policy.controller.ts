@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { prisma } from '../config/db.js';
+import prisma from '../config/db.js';
 import { asyncHandler } from '../middleware/error.js';
 import { CustomError } from '../middleware/error.js';
 import { calculatePricing2, calculateRefund as calculateRefundFromService } from '../services/pricingCalculator.js';
@@ -9,6 +9,7 @@ import crypto from 'crypto';
 import { getVehicleInfo } from '../services/vinLookup.js';
 import { getMaximumReadAccess, applyMaximumAccess } from '../services/maximumAccess.js';
 import { formatDataForResponse } from '../services/utilities.js';
+import { sendEmail } from '../services/emailSender.js';
 
 // Helper function to convert payment method string to integer code
 const getPaymentMethodCode = (paymentMethod: string): number => {
@@ -369,8 +370,6 @@ export const createPolicy = asyncHandler(async (req: any, res: Response): Promis
         `;
         
         try {
-            // Import and use the email sender
-            const { sendEmail } = await import('../services/emailSender');
             await sendEmail(contactInfo.primary.email.value, emailSubject, emailBody);
             console.log(`Confirmation email sent successfully to ${contactInfo.primary.email.value}`);
         } catch (error) {
@@ -989,7 +988,6 @@ export const startPolicyCancelation = asyncHandler(async (req: any, res: Respons
         `;
         
         try {
-            const { sendEmail } = await import('../services/emailSender');
             await sendEmail(policy.applicants?.email_1 || '', emailSubject, emailBody);
             console.log(`Cancellation email sent successfully to ${policy.applicants?.email_1}`);
         } catch (error) {

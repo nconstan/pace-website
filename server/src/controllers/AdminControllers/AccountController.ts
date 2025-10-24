@@ -1,10 +1,11 @@
 import { Request, Response } from 'express';
-import { prisma } from '../../config/db.js';
+import prisma from '../../config/db.js';
 import { asyncHandler } from '../../middleware/error.js';
 import jwt from 'jsonwebtoken';
 import argon2 from 'argon2';
 import { JWT_SECRET } from '../../config/env.js';
 import { formatDataForResponse } from '../../services/utilities.js';
+import { sendEmail } from '../../services/emailSender.js';
 
 
 export const getAccounts = asyncHandler(async (req: any, res: Response): Promise<void> => {
@@ -247,8 +248,6 @@ export const createAccount = asyncHandler(async (req: any, res: Response): Promi
     `;
     
     try {
-        // Import and use the email sender
-        const { sendEmail } = await import('../../services/emailSender');
         await sendEmail(primary_email, emailSubject, emailBody);
         console.log(`Setup email sent successfully to ${primary_email}`);
     } catch (error) {

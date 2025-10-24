@@ -1,8 +1,8 @@
 import express, { Request, Response, Router } from 'express';
-import { asyncHandler } from '../middleware/error';
+import { asyncHandler } from '../middleware/error.js';
 import { Client } from '@microsoft/microsoft-graph-client';
 import { ConfidentialClientApplication } from '@azure/msal-node';
-require('isomorphic-fetch'); // For fetch polyfill
+import 'isomorphic-fetch'; // For fetch polyfill
 
 const router: Router = express.Router();
 
