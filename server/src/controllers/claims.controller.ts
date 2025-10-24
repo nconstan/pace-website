@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { asyncHandler } from '../middleware/error.js';
-import pkg from '../../generated/client';
+import pkg from '../../generated/client/index.js';
 const { PrismaClient } = pkg;
 import { uploadToClaimsBucket, deleteFromClaimsBucket, supabase } from '../config/supabase.js';
 import { scheduleCommand } from '../services/actionQueue.js';
