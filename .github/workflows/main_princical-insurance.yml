@@ -65,7 +65,9 @@ jobs:
           mkdir -p deployment
           cp -r server/dist deployment/  # Only the built files (dist/index.js, dist/public/, etc.)
           cp server/package.json deployment/  # For defining dependencies
+          cp -r server/generated deployment/  # Copy the generated Prisma client
           # Copy any other runtime necessities, e.g., .env.d.ts or custom configs if present
+          # If you perform Prisma migrations at runtime, also copy: cp -r server/prisma deployment/
           cd deployment
           npm install --only=production  # Installs deps locally (no workspaces/hoisting)
 

@@ -1,0 +1,400 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/client"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model accounts {
+  id                                          BigInt               @id(map: "user_pkey") @default(autoincrement())
+  username                                    String
+  password                                    String?
+  roles                                       Int[]                @db.SmallInt
+  active                                      Boolean              @default(true)
+  created_by                                  BigInt
+  created_at                                  DateTime             @default(now()) @db.Timestamptz(6)
+  contact_id                                  BigInt?
+  change_log                                  Json[]
+  notes                                       Json[]
+  setup_token                                 String?
+  dealer_group_id                             BigInt?
+  contacts_accounts_contact_idTocontacts      contacts?            @relation("accounts_contact_idTocontacts", fields: [contact_id], references: [id])
+  accounts                                    accounts             @relation("accountsToaccounts", fields: [created_by], references: [id], onDelete: SetNull)
+  other_accounts                              accounts[]           @relation("accountsToaccounts")
+  dealer_groups                               dealer_groups?       @relation(fields: [dealer_group_id], references: [id])
+  contacts_contacts_dealer_group_idToaccounts contacts[]           @relation("contacts_dealer_group_idToaccounts")
+  contacts_contacts_linked_accountToaccounts  contacts[]           @relation("contacts_linked_accountToaccounts")
+  policies_policies_created_by_idToaccounts   policies[]           @relation("policies_created_by_idToaccounts")
+  policies_policies_seller_idToaccounts       policies[]           @relation("policies_seller_idToaccounts")
+  quick_quotes                                quick_quotes[]
+  seller_dealerships                          seller_dealerships[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model applicants {
+  id              BigInt           @id @default(autoincrement())
+  created_at      DateTime         @default(now()) @db.Timestamptz(6)
+  is_company      Boolean          @default(false)
+  first_name_1    String
+  last_name_1     String
+  first_name_2    String?
+  last_name_2     String?
+  address_1       String
+  address_2       String?
+  city            String
+  province        String
+  postal_code     String
+  email_1         String
+  email_2         String?
+  phone_number_1  String
+  phone_number_2  String?
+  notes           Json[]
+  policy_ids      BigInt[]
+  customer_number BigInt           @unique
+  claims_details  claims_details[]
+  policies        policies[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model cancelation_details {
+  id                                                         BigInt                   @id @default(autoincrement())
+  created_at                                                 DateTime                 @default(now()) @db.Timestamptz(6)
+  policy_id                                                  BigInt?
+  underwriting_clawback                                      Float?                   @db.Real
+  dealership_clawback                                        Float?                   @db.Real
+  dealer_group_clawback                                      Float?                   @db.Real
+  MGA_clawback                                               Float?                   @db.Real
+  referral_clawback                                          Float?                   @db.Real
+  clawback_type                                              Float?                   @db.Real
+  fee                                                        Float?                   @db.Real
+  refund_factor                                              Float?                   @db.Real
+  clawback_total                                             Float?                   @db.Real
+  cancellation_reason                                        String?
+  policies_cancelation_details_policy_idTopolicies           policies?                @relation("cancelation_details_policy_idTopolicies", fields: [policy_id], references: [id], onDelete: NoAction)
+  policies_policies_cancelation_detailsTocancelation_details policies[]               @relation("policies_cancelation_detailsTocancelation_details")
+  product_refund_details                                     product_refund_details[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model claims_details {
+  id                                               BigInt     @id @default(autoincrement())
+  created_at                                       DateTime   @default(now()) @db.Timestamptz(6)
+  completed_at                                     DateTime?  @db.Timestamptz(6)
+  from_customer                                    BigInt
+  from_policy                                      BigInt
+  documents                                        Json?
+  active                                           Int        @default(1) @db.SmallInt
+  last_update                                      DateTime?  @db.Timestamptz(6)
+  validated_fields                                 Json?
+  change_log                                       Json[]
+  applicants                                       applicants @relation(fields: [from_customer], references: [id], onDelete: NoAction)
+  policies                                         policies   @relation(fields: [from_policy], references: [id], onDelete: NoAction)
+  policies_policies_claims_detailsToclaims_details policies[] @relation("policies_claims_detailsToclaims_details")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model contacts {
+  id                                          BigInt          @id @default(autoincrement())
+  created_at                                  DateTime        @default(now()) @db.Timestamptz(6)
+  assistant_id                                BigInt?
+  first_name                                  String?
+  last_name                                   String?
+  nickname                                    String?
+  primary_email                               String
+  secondary_email                             String?
+  primary_phone_number                        String?
+  secondary_phone_number                      String?
+  address_1                                   String?
+  address_2                                   String?
+  city                                        String?
+  province                                    String?
+  postal_code                                 String?
+  birthday                                    DateTime?       @db.Date
+  linked_account                              BigInt?
+  notes                                       Json[]
+  change_log                                  Json[]
+  dealer_group_id                             BigInt?
+  accounts_accounts_contact_idTocontacts      accounts[]      @relation("accounts_contact_idTocontacts")
+  contacts                                    contacts?       @relation("contactsTocontacts", fields: [assistant_id], references: [id])
+  other_contacts                              contacts[]      @relation("contactsTocontacts")
+  accounts_contacts_dealer_group_idToaccounts accounts?       @relation("contacts_dealer_group_idToaccounts", fields: [dealer_group_id], references: [id])
+  accounts_contacts_linked_accountToaccounts  accounts?       @relation("contacts_linked_accountToaccounts", fields: [linked_account], references: [id])
+  dealer_groups                               dealer_groups[]
+  dealerships                                 dealerships[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model dealer_groups {
+  id                        BigInt                      @id(map: "dealer_group_pkey") @default(autoincrement())
+  created_at                DateTime                    @default(now()) @db.Timestamptz(6)
+  dealer_margin             Float?                      @db.Real
+  dealer_group_split        Int?                        @db.SmallInt
+  referral_fee_rate         Float?                      @db.Real
+  full_name                 String?
+  nickname                  String?
+  notes                     Json[]
+  change_log                Json[]
+  address_1                 String?
+  address_2                 String?
+  postal_code               String?
+  secondary_contact_ids     BigInt[]
+  primary_contact_ids       BigInt
+  accounts                  accounts[]
+  contacts                  contacts                    @relation(fields: [primary_contact_ids], references: [id], onDelete: NoAction)
+  dealerships               dealerships[]
+  dealerships_dealer_groups dealerships_dealer_groups[]
+  policies                  policies[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model dealerships {
+  id                        BigInt                      @id(map: "dealership_pkey1") @default(autoincrement())
+  dealer_group_id           BigInt
+  created_at                DateTime                    @default(now()) @db.Timestamptz(6)
+  name                      String?
+  nickname                  String?
+  address_1                 String
+  address_2                 String?
+  city                      String?
+  province                  String?
+  postal_code               String?
+  licensed_seller           Boolean                     @default(false)
+  primary_contact_ids       BigInt?
+  secondary_contact_ids     BigInt[]
+  products                  BigInt[]
+  notes                     Json?
+  change_logs               Json[]
+  dealer_groups             dealer_groups               @relation(fields: [dealer_group_id], references: [id], onDelete: NoAction, map: "dealership_dealer_group_id_fkey")
+  contacts                  contacts?                   @relation(fields: [primary_contact_ids], references: [id])
+  dealerships_dealer_groups dealerships_dealer_groups[]
+  policies                  policies[]
+  seller_dealerships        seller_dealerships[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model dealerships_dealer_groups {
+  dealership_id   BigInt
+  dealer_group_id BigInt
+  active          Boolean       @default(true)
+  dealer_groups   dealer_groups @relation(fields: [dealer_group_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "dealerships_group_dealer_group_id_fkey")
+  dealerships     dealerships   @relation(fields: [dealership_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "dealerships_group_dealership_id_fkey")
+
+  @@id([dealership_id, dealer_group_id], map: "dealerships_group_pkey")
+  @@index([dealer_group_id], map: "idx_dealerships_group_dealer_group_id")
+  @@index([dealership_id], map: "idx_dealerships_group_dealership_id")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model policies {
+  id                                                                             BigInt                   @id @default(autoincrement())
+  created_at                                                                     DateTime                 @default(now()) @db.Timestamptz(6)
+  notes                                                                          Json[]
+  seller_id                                                                      BigInt?
+  dealership_id                                                                  BigInt?
+  dealer_group_id                                                                BigInt?
+  created_by_id                                                                  BigInt
+  applicant_id                                                                   BigInt
+  price_calculation_data                                                         BigInt?
+  pricing_details                                                                BigInt?
+  product_pricing_details                                                        BigInt[]
+  cancelation_details                                                            BigInt?
+  policy_status                                                                  Int                      @db.SmallInt
+  products                                                                       String[]
+  policy_term                                                                    String
+  effective_date                                                                 DateTime                 @db.Timestamptz(6)
+  date_terminated                                                                DateTime?                @db.Timestamptz(6)
+  province                                                                       String
+  jwt_token                                                                      String?
+  credit_card_token                                                              String?
+  policy_payment_method                                                          Int                      @db.SmallInt
+  total_price                                                                    Float                    @db.Real
+  transfered_from                                                                BigInt?
+  transfered_to                                                                  BigInt?
+  primary_insurer_id                                                             BigInt?
+  primary_insurer_policy_number                                                  String?
+  vehicle_details                                                                BigInt?
+  cancelation_details_cancelation_details_policy_idTopolicies                    cancelation_details[]    @relation("cancelation_details_policy_idTopolicies")
+  claims_details_id                                                              BigInt?
+  claims_details                                                                 claims_details[]
+  applicants                                                                     applicants               @relation(fields: [applicant_id], references: [id], onDelete: NoAction)
+  cancelation_details_policies_cancelation_detailsTocancelation_details          cancelation_details?     @relation("policies_cancelation_detailsTocancelation_details", fields: [cancelation_details], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  claims_details_policies_claims_detailsToclaims_details                         claims_details?          @relation("policies_claims_detailsToclaims_details", fields: [claims_details_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  accounts_policies_created_by_idToaccounts                                      accounts                 @relation("policies_created_by_idToaccounts", fields: [created_by_id], references: [id], onDelete: NoAction)
+  dealer_groups                                                                  dealer_groups?           @relation(fields: [dealer_group_id], references: [id], onDelete: NoAction)
+  dealerships                                                                    dealerships?             @relation(fields: [dealership_id], references: [id], onDelete: NoAction)
+  price_calculation_data_policies_price_calculation_dataToprice_calculation_data price_calculation_data?  @relation("policies_price_calculation_dataToprice_calculation_data", fields: [price_calculation_data], references: [id], onDelete: NoAction)
+  pricing_details_policies_pricing_detailsTopricing_details                      pricing_details?         @relation("policies_pricing_detailsTopricing_details", fields: [pricing_details], references: [id], onDelete: NoAction)
+  accounts_policies_seller_idToaccounts                                          accounts?                @relation("policies_seller_idToaccounts", fields: [seller_id], references: [id], onDelete: NoAction)
+  policies_policies_transfered_fromTopolicies                                    policies?                @relation("policies_transfered_fromTopolicies", fields: [transfered_from], references: [id], onDelete: NoAction)
+  other_policies_policies_transfered_fromTopolicies                              policies[]               @relation("policies_transfered_fromTopolicies")
+  policies_policies_transfered_toTopolicies                                      policies?                @relation("policies_transfered_toTopolicies", fields: [transfered_to], references: [id], onDelete: NoAction)
+  other_policies_policies_transfered_toTopolicies                                policies[]               @relation("policies_transfered_toTopolicies")
+  vehicle_details_policies_vehicle_detailsTovehicle_details                      vehicle_details?         @relation("policies_vehicle_detailsTovehicle_details", fields: [vehicle_details], references: [id], onDelete: NoAction)
+  price_calculation_data_price_calculation_data_policy_idTopolicies              price_calculation_data[] @relation("price_calculation_data_policy_idTopolicies")
+  pricing_details_pricing_details_policy_idTopolicies                            pricing_details[]        @relation("pricing_details_policy_idTopolicies")
+  product_price_details                                                          product_price_details[]
+  product_refund_details                                                         product_refund_details[]
+  vehicle_details_vehicle_details_from_policyTopolicies                          vehicle_details[]        @relation("vehicle_details_from_policyTopolicies")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model price_calculation_data {
+  id                                                               BigInt     @id @default(autoincrement())
+  policy_id                                                        BigInt
+  value_appreciation_rate                                          String?
+  depreciation_model                                               String?
+  vehicle_state                                                    String?
+  vehicle_state_factor                                             String?
+  vehicle_category                                                 Int?       @db.SmallInt
+  vehicle_category_factor                                          String?
+  zone                                                             Int?       @db.SmallInt
+  zone_factor                                                      String?
+  negative_equity_ratio_factor                                     String?
+  interest_rate_factor                                             String?
+  model_year_factor                                                String?
+  provincial_factor                                                String?
+  powertrain_factor                                                String?
+  MGA_adjustment                                                   Float?     @db.Real
+  seller_adjustment                                                Float?     @db.Real
+  referral_adjustment                                              Float?     @db.Real
+  administration_fee                                               Float?     @db.Real
+  vehicle_purchase_method                                          Int?       @db.SmallInt
+  total_debt                                                       Float?     @db.Real
+  debt_interest_rate                                               Float?     @db.Real
+  debt_term                                                        Int?       @db.SmallInt
+  residual_value                                                   Float?     @db.Real
+  loan_payment_monthly                                             Float?     @db.Real
+  negative_equity                                                  Float?     @db.Real
+  lien_holder_id                                                   BigInt?
+  loan_number                                                      String?
+  policies_policies_price_calculation_dataToprice_calculation_data policies[] @relation("policies_price_calculation_dataToprice_calculation_data")
+  policies_price_calculation_data_policy_idTopolicies              policies   @relation("price_calculation_data_policy_idTopolicies", fields: [policy_id], references: [id], onDelete: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model pricing_details {
+  id                                                 BigInt                  @id @default(autoincrement())
+  policy_id                                          BigInt
+  products                                           String[]
+  licenced_seller                                    Boolean
+  coverage_term                                      Int                     @db.SmallInt
+  underwriting_premium                               Float?                  @db.Real
+  MGA_premium                                        Float?                  @db.Real
+  seller_commission                                  Float?                  @db.Real
+  IPT                                                Float?                  @db.Real
+  dealership_referral_fee                            Float?                  @db.Real
+  dealership_referral_GST                            Float?                  @db.Real
+  dealer_group_referral_fee                          Float?                  @db.Real
+  dealer_group_referral_GST                          Float?                  @db.Real
+  cc_surcharge                                       Float?                  @db.Real
+  transfer_credit                                    Float?                  @db.Real
+  retail_price                                       Float?                  @db.Real
+  retail_tax                                         Float?                  @db.Real
+  retail_price_after_tax                             Float?                  @db.Real
+  product_pricing_details                            BigInt[]
+  policies_policies_pricing_detailsTopricing_details policies[]              @relation("policies_pricing_detailsTopricing_details")
+  policies_pricing_details_policy_idTopolicies       policies                @relation("pricing_details_policy_idTopolicies", fields: [policy_id], references: [id], onDelete: NoAction)
+  product_price_details                              product_price_details[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model product_price_details {
+  id                        BigInt          @id @default(autoincrement())
+  policy_id                 BigInt
+  pricing_details_id        BigInt
+  product_type              String?
+  underwriting_premium      Float?          @db.Real
+  MGA_premium               Float?          @db.Real
+  seller_commission         Float?          @db.Real
+  IPT                       Float?          @db.Real
+  dealership_referral_fee   Float?          @db.Real
+  dealership_referral_GST   Float?          @db.Real
+  dealer_group_referral_fee Float?          @db.Real
+  dealer_group_referral_GST Float?          @db.Real
+  cc_surcharge              Float?          @db.Real
+  retail_price              Float?          @db.Real
+  retail_tax                Float?          @db.Real
+  retail_price_after_tax    Float?          @db.Real
+  policies                  policies        @relation(fields: [policy_id], references: [id], onDelete: NoAction)
+  pricing_details           pricing_details @relation(fields: [pricing_details_id], references: [id], onDelete: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model product_refund_details {
+  id                     BigInt               @id @default(autoincrement())
+  policy_id              BigInt?
+  cancelation_details_id BigInt?
+  product_type           String?
+  underwriting_clawback  Float?               @db.Real
+  dealership_clawback    Float?               @db.Real
+  dealer_group_clawback  Float?               @db.Real
+  MGA_clawback           Float?               @db.Real
+  referral_clawback      Float?               @db.Real
+  cancelation_details    cancelation_details? @relation(fields: [cancelation_details_id], references: [id], onDelete: NoAction)
+  policies               policies?            @relation(fields: [policy_id], references: [id], onDelete: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model quick_quotes {
+  id          BigInt    @id @default(autoincrement())
+  created_at  DateTime  @default(now()) @db.Timestamptz(6)
+  vin         String
+  applicant   Json?
+  contactInfo Json?
+  vehicle     Json?
+  debtInfo    Json?
+  productInfo Json?
+  paymentInfo Json?
+  name        String?
+  currentStep Int       @db.SmallInt
+  completed   Boolean   @default(false)
+  seller_id   BigInt?
+  accounts    accounts? @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model seller_dealerships {
+  seller_id     BigInt
+  dealership_id BigInt
+  dealerships   dealerships @relation(fields: [dealership_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  accounts      accounts    @relation(fields: [seller_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([seller_id, dealership_id])
+  @@index([dealership_id], map: "idx_seller_dealerships_dealership_id")
+  @@index([seller_id], map: "idx_seller_dealerships_seller_id")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model vehicle_details {
+  id                                                 BigInt     @id @default(autoincrement())
+  from_policy                                        BigInt
+  vin                                                String
+  make                                               String?
+  model                                              String?
+  series                                             String?
+  body                                               String?
+  MSRP                                               String?
+  bought_vehicle_value                               String?
+  vehicle_state                                      String?
+  vehicle_purchase_year                              String?
+  odometer                                           Int
+  model_year                                         Int?       @db.SmallInt
+  policies_policies_vehicle_detailsTovehicle_details policies[] @relation("policies_vehicle_detailsTovehicle_details")
+  policies_vehicle_details_from_policyTopolicies     policies   @relation("vehicle_details_from_policyTopolicies", fields: [from_policy], references: [id], onDelete: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model action_queue {
+  id         BigInt   @id @default(autoincrement())
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  run_date   DateTime @db.Timestamptz(6)
+  repeating  Boolean
+  command    String
+  interval   String?
+  data       Json?
+}
