@@ -24,18 +24,11 @@ jobs:
           node-version: '20.x'
           cache: 'npm'
 
-      - name: Install root dependencies
-        run: npm install
-
-      - name: Install server dependencies
+      - name: Install dependencies
         run: |
-          cd server
           npm install
-
-      - name: Install website dependencies
-        run: |
-          cd pace-website
-          npm install
+          cd server && npm install
+          cd ../pace-website && npm install
 
       - name: Build server
         run: |
@@ -45,6 +38,7 @@ jobs:
       - name: Build website
         run: |
           cd pace-website
+          npm ci --force
           npm run build
 
       - name: Run tests
