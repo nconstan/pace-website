@@ -1,22 +1,22 @@
 import { Request, Response } from 'express';
-import { prisma } from '../config/db';
-import { asyncHandler } from '../middleware/error';
+import { prisma } from '../config/db.js';
+import { asyncHandler } from '../middleware/error.js';
 import jwt from 'jsonwebtoken';
 import argon2 from 'argon2';
-import { JWT_SECRET } from '../config/env';
-import { formatDataForResponse } from '../services/utilities';
+import { JWT_SECRET } from '../config/env.js';
+import { formatDataForResponse } from '../services/utilities.js';
 
 // Contact Management
-export { getContacts, createContact,} from './AdminControllers/ContactsController';
+export { getContacts, createContact,} from './AdminControllers/ContactsController.js';
 
 // Dealer Group Management
-export { getDealerGroups, createDealerGroup, updateDealerGroup, deleteDealerGroup } from './AdminControllers/DealerGroupController';
+export { getDealerGroups, createDealerGroup, updateDealerGroup, deleteDealerGroup } from './AdminControllers/DealerGroupController.js';
 
 // Dealership Management
-export { getDealerships, createDealership, updateDealership, deleteDealership } from './AdminControllers/DealershipController';
+export { getDealerships, createDealership, updateDealership, deleteDealership } from './AdminControllers/DealershipController.js';
 
 // Account Management
-export { getAccounts, createAccount, updateAccount } from './AdminControllers/AccountController';
+export { getAccounts, createAccount, updateAccount } from './AdminControllers/AccountController.js';
 
 // Applicant Management - Limited data for customer lookup
 export const getApplicantByCustomerNumber = asyncHandler(async (req: any, res: Response): Promise<void> => {

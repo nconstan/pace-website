@@ -1,8 +1,8 @@
 import express, { Request, Response, Router } from 'express';
-import { prisma } from '../config/db';
-import { asyncHandler } from '../middleware/error';
-import depreciationData from '../config/depreciationValues.json';
-import { getVehicleInfo } from './vinLookup';
+import { prisma } from '../config/db.js';
+import { asyncHandler } from '../middleware/error.js';
+import depreciationData from '../config/depreciationValues.json' with { type: 'json' };
+import { getVehicleInfo } from './vinLookup.js';
 
 const router: Router = express.Router();
 

@@ -1,4 +1,4 @@
-import { getMaximumReadAccess } from './maximumAccess';
+import { getMaximumReadAccess } from './maximumAccess.js';
 
 // Mock user objects for testing
 const mockUser1 = {

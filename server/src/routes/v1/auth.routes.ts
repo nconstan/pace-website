@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import { login, validateToken, changePassword, setupPassword } from '../../controllers/auth.controller';
-import { authenticateToken } from '../../middleware/auth';
-import { validateRequiredFields, validateRole, validateWithZod, loginSchema, createAccountSchema, setupPasswordSchema } from '../../middleware/validation';
-import { rateLimit } from '../../middleware/ratelimit';
+import { login, validateToken, changePassword, setupPassword } from '../../controllers/auth.controller.js';
+import { authenticateToken } from '../../middleware/auth.js';
+import { validateRequiredFields, validateRole, validateWithZod, loginSchema, createAccountSchema, setupPasswordSchema } from '../../middleware/validation.js';
+import { rateLimit } from '../../middleware/ratelimit.js';
 
 const router = Router();
 

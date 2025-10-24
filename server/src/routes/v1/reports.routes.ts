@@ -1,8 +1,8 @@
 import { Router } from 'express'
 import { 
   getPolicies
-} from '../../controllers/reports.controller'
-import { authenticateToken } from '../../middleware/auth'
+} from '../../controllers/reports.controller.js'
+import { authenticateToken } from '../../middleware/auth.js'
 
 const router = Router()
 

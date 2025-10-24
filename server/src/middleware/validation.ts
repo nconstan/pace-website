@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
-import { CustomError } from './error';
+import { CustomError } from './error.js';
 
 // Zod schemas for validation
 export const loginSchema = z.object({

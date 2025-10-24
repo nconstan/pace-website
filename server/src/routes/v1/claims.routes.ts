@@ -11,9 +11,9 @@ import {
     getClaimsByEmail,
     getClaimsByCustomerNumber,
     upload
-} from '../../controllers/claims.controller';
-import { authenticateToken } from '../../middleware/auth';
-import { validateDealershipAccess } from '../../middleware/validation';
+} from '../../controllers/claims.controller.js';
+import { authenticateToken } from '../../middleware/auth.js';
+import { validateDealershipAccess } from '../../middleware/validation.js';
 
 const router = Router();
 

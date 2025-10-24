@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
-import { prisma } from '../config/db';
-import { asyncHandler } from '../middleware/error';
-import { CustomError } from '../middleware/error';
+import { prisma } from '../config/db.js';
+import { asyncHandler } from '../middleware/error.js';
+import { CustomError } from '../middleware/error.js';
 
 export const getUserSettings = asyncHandler(async (req: any, res: Response): Promise<void> => {
     const user = await prisma.accounts.findUnique({

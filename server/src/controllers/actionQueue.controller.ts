@@ -1,12 +1,12 @@
 import { Request, Response } from 'express';
-import { asyncHandler } from '../middleware/error';
+import { asyncHandler } from '../middleware/error.js';
 import { 
     scheduleCommand, 
     getScheduledCommands, 
     cancelCommand,
     getAvailableCommands,
     registerCommand
-} from '../services/actionQueue';
+} from '../services/actionQueue.js';
 
 /**
  * Get all available commands

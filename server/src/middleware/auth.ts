@@ -16,7 +16,7 @@ export interface AuthenticatedRequest extends Request {
     user?: User;
 }
 
-import { JWT_SECRET } from '../config/env';
+import { JWT_SECRET } from '../config/env.js';
 
 // JWT Secret from environment configuration
 

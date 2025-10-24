@@ -1,7 +1,7 @@
 import { Request, Response } from 'express'
-import { prisma } from '../config/db'
-import { asyncHandler } from '../middleware/error'
-import { CustomError } from '../middleware/error'
+import { prisma } from '../config/db.js'
+import { asyncHandler } from '../middleware/error.js'
+import { CustomError } from '../middleware/error.js'
 
 // Extend Express Request to include user property
 interface AuthenticatedRequest extends Request {

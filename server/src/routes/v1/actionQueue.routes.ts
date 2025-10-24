@@ -6,9 +6,9 @@ import {
     cancelScheduledCommand,
     getCommandStats,
     registerNewCommand
-} from '../../controllers/actionQueue.controller';
-import { authenticateToken } from '../../middleware/auth';
-import { validateRole } from '../../middleware/validation';
+} from '../../controllers/actionQueue.controller.js';
+import { authenticateToken } from '../../middleware/auth.js';
+import { validateRole } from '../../middleware/validation.js';
 
 const router = Router();
 

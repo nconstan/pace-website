@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { getUserSettings, updateUserSettings } from '../../controllers/settings.controller';
-import { authenticateToken } from '../../middleware/auth';
-import { validateRequiredFields } from '../../middleware/validation';
+import { getUserSettings, updateUserSettings } from '../../controllers/settings.controller.js';
+import { authenticateToken } from '../../middleware/auth.js';
+import { validateRequiredFields } from '../../middleware/validation.js';
 
 const router = Router();
 

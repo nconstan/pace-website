@@ -1,14 +1,14 @@
 import { Request, Response } from 'express';
-import { prisma } from '../config/db';
-import { asyncHandler } from '../middleware/error';
-import { CustomError } from '../middleware/error';
-import { calculatePricing2, calculateRefund as calculateRefundFromService } from '../services/pricingCalculator';
+import { prisma } from '../config/db.js';
+import { asyncHandler } from '../middleware/error.js';
+import { CustomError } from '../middleware/error.js';
+import { calculatePricing2, calculateRefund as calculateRefundFromService } from '../services/pricingCalculator.js';
 import jwt from 'jsonwebtoken';
-import { JWT_SECRET } from '../config/env';
+import { JWT_SECRET } from '../config/env.js';
 import crypto from 'crypto';
-import { getVehicleInfo } from '../services/vinLookup';
-import { getMaximumReadAccess, applyMaximumAccess } from '../services/maximumAccess';
-import { formatDataForResponse } from '../services/utilities';
+import { getVehicleInfo } from '../services/vinLookup.js';
+import { getMaximumReadAccess, applyMaximumAccess } from '../services/maximumAccess.js';
+import { formatDataForResponse } from '../services/utilities.js';
 
 // Helper function to convert payment method string to integer code
 const getPaymentMethodCode = (paymentMethod: string): number => {

@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { prisma } from '../config/db';
-import { asyncHandler } from '../middleware/error';
+import { prisma } from '../config/db.js';
+import { asyncHandler } from '../middleware/error.js';
 
 export const getDashboardStats = asyncHandler(async (req: any, res: Response): Promise<void> => {
     // Get policy count for the dealership

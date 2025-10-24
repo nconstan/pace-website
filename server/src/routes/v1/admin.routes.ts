@@ -14,9 +14,9 @@ import {
     updateDealership,
     deleteDealership,
     getApplicantByCustomerNumber,
-} from '../../controllers/admin.controller';
-import { authenticateToken } from '../../middleware/auth';
-import { validateRole, validateRequiredFields, validateContactFields, validateWithZod, createAccountSchema } from '../../middleware/validation';
+} from '../../controllers/admin.controller.js';
+import { authenticateToken } from '../../middleware/auth.js';
+import { validateRole, validateRequiredFields, validateContactFields, validateWithZod, createAccountSchema } from '../../middleware/validation.js';
 
 const router = Router();
 

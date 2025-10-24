@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { CustomError } from './error';
+import { CustomError } from './error.js';
 
 interface RateLimitStore {
     [key: string]: {

@@ -17,9 +17,9 @@ import {
     getPoliciesByCustomerNumber,
     startPolicyCancelation,
     cancelPolicy
-} from '../../controllers/policy.controller';
-import { authenticateToken } from '../../middleware/auth';
-import { validateRequiredFields, validateDealershipAccess, validateWithZod, createPolicySchema, quickQuoteSchema } from '../../middleware/validation';
+} from '../../controllers/policy.controller.js';
+import { authenticateToken } from '../../middleware/auth.js';
+import { validateRequiredFields, validateDealershipAccess, validateWithZod, createPolicySchema, quickQuoteSchema } from '../../middleware/validation.js';
 
 const router = Router();
 

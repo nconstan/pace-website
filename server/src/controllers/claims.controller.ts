@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
-import { asyncHandler } from '../middleware/error';
+import { asyncHandler } from '../middleware/error.js';
 import { PrismaClient } from '@prisma/client';
-import { uploadToClaimsBucket, deleteFromClaimsBucket, supabase } from '../config/supabase';
-import { scheduleCommand } from '../services/actionQueue';
+import { uploadToClaimsBucket, deleteFromClaimsBucket, supabase } from '../config/supabase.js';
+import { scheduleCommand } from '../services/actionQueue.js';
 import multer from 'multer';
 
 const prisma = new PrismaClient();

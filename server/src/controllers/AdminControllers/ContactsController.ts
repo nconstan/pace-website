@@ -1,10 +1,10 @@
 import { Request, Response } from 'express';
-import { prisma } from '../../config/db';
-import { asyncHandler } from '../../middleware/error';
+import { prisma } from '../../config/db.js';
+import { asyncHandler } from '../../middleware/error.js';
 import jwt from 'jsonwebtoken';
 import argon2 from 'argon2';
-import { JWT_SECRET } from '../../config/env';
-import { formatDataForResponse } from '../../services/utilities';
+import { JWT_SECRET } from '../../config/env.js';
+import { formatDataForResponse } from '../../services/utilities.js';
 
 export const getContacts = asyncHandler(async (req: any, res: Response): Promise<void> => {
     const { search = '', dealerGroupId } = req.query;

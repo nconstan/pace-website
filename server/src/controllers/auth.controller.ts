@@ -1,10 +1,10 @@
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import argon2 from 'argon2';
-import { prisma } from '../config/db';
-import { JWT_SECRET } from '../config/env';
-import { asyncHandler } from '../middleware/error';
-import { CustomError } from '../middleware/error';
+import { prisma } from '../config/db.js';
+import { JWT_SECRET } from '../config/env.js';
+import { asyncHandler } from '../middleware/error.js';
+import { CustomError } from '../middleware/error.js';
 
 export const login = asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { username, password } = req.body;
