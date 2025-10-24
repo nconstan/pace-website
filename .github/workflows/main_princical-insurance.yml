@@ -55,19 +55,14 @@ jobs:
           mkdir -p server/dist/public
           cp -r pace-website/dist/* server/dist/public/
 
-      - name: Install production dependencies in server
-        run: |
-          cd server
-          npm ci --only=production
-
       - name: Create deployment package
         run: |
           mkdir -p deployment
-          cp -r server/* deployment/
-          # Copy node_modules if it exists, otherwise it will be installed by Azure
-          if [ -d "server/node_modules" ]; then
-            cp -r server/node_modules deployment/
-          fi
+          cp -r server/dist deployment/  # Only the built files (dist/index.js, dist/public/, etc.)
+          cp server/package.json deployment/  # For defining dependencies
+          # Copy any other runtime necessities, e.g., .env.d.ts or custom configs if present
+          cd deployment
+          npm install --only=production  # Installs deps locally (no workspaces/hoisting)
 
       - name: Upload server artifact for deployment
         uses: actions/upload-artifact@v4
