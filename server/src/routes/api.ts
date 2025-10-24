@@ -32,4 +32,14 @@ router.get('/insurance/quotes', (req, res) => {
   });
 });
 
+// Random number endpoint
+router.get('/random', (req, res) => {
+  const randomNumber = Math.floor(Math.random() * 1000) + 1; // Random number between 1-1000
+  res.json({
+    success: true,
+    randomNumber: randomNumber,
+    timestamp: new Date().toISOString()
+  });
+});
+
 export default router;
