@@ -1,4 +1,6 @@
 import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
@@ -6,6 +8,10 @@ import dotenv from 'dotenv';
 import { errorHandler } from './middleware/errorHandler.js';
 import { notFound } from './middleware/notFound.js';
 import apiRoutes from './routes/api.js';
+
+// Polyfill for __dirname in ESM
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Load environment variables
 dotenv.config();
@@ -42,17 +48,15 @@ app.get('/health', (req, res) => {
 // API routes
 app.use('/api', apiRoutes);
 
-// Serve static files from the frontend build
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static('public'));
-  
-  // Catch all handler for SPA routing
-  app.get('*', (req, res) => {
-    res.sendFile('index.html', { root: 'public' });
-  });
-}
+// Serve static files from the frontend build (public dir relative to dist/)
+app.use(express.static(path.join(__dirname, 'public')));
 
-// Error handling middleware
+// Catch all handler for SPA routing (serve index.html for non-API routes)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Error handling middleware (notFound should rarely trigger now, except for true 404s like missing assets)
 app.use(notFound);
 app.use(errorHandler);
 
