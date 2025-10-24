@@ -146,7 +146,7 @@
                 :class="{ 'error': shouldShowError('primary_phone_number') }"
                 placeholder="(555) 123-4567"
                 @blur="markFieldAsTouched('primary_phone_number')"
-                @input="(event) => autoFormat(event, 'phone')"
+                @input="autoFormat($event, 'phone')"
               />
               <div v-if="shouldShowError('primary_phone_number')" class="error-message">{{ accountForm.primary_phone_number.validationErrors }}</div>
             </div>
@@ -162,7 +162,7 @@
                 type="tel"
                 class="form-input"
                 placeholder="(555) 123-4567"
-                @input="(event) => autoFormat(event, 'phone')"
+                @input="autoFormat($event, 'phone')"
               />
             </div>
           </div>
@@ -265,7 +265,7 @@
               :class="{ 'error': shouldShowError('postal_code') }"
               placeholder="A1A 1A1"
               @blur="markFieldAsTouched('postal_code')"
-              @input="(event) => autoFormat(event, 'postalCode')"
+              @input="autoFormat($event, 'postalCode')"
             />
             <div v-if="shouldShowError('postal_code')" class="error-message">{{ accountForm.postal_code.validationErrors }}</div>
           </div>
@@ -300,7 +300,7 @@
            </div>
          </div>
          <!-- Dealer Group Selection (Only for Role 4 and 12) -->
-         <div v-if="canSetDealerGroup && [3,2,1].includes(parseInt(selectedRoles[0]))" class="form-section">
+         <div v-if="canSetDealerGroup && [3,2,1].includes(parseInt(selectedRoles[0] || '0'))" class="form-section">
            <h4 class="section-title">Dealer Group Assignment</h4>
            
            <div class="form-group">
@@ -327,7 +327,7 @@
          </div>
 
         <!-- Associated Dealerships -->
-        <div v-if="[3,2,1].includes(parseInt(selectedRoles[0]))" class="form-section">
+        <div v-if="[3,2,1].includes(parseInt(selectedRoles[0] || '0'))" class="form-section">
           <h4 class="section-title">Associated Dealerships</h4>
           
           <div class="form-group">
@@ -535,7 +535,10 @@ const getRoleName = (role: number) => {
 
 const handleRoleChange = () => {
   if(selectedRoles.value.some(role => [1, 2, 3].includes(parseInt(role)))) {
-    selectedRoles.value = [selectedRoles.value[selectedRoles.value.length - 1]]
+    const lastRole = selectedRoles.value[selectedRoles.value.length - 1]
+    if (lastRole) {
+      selectedRoles.value = [lastRole]
+    }
   }
   validateField('roles')
 }
@@ -621,7 +624,7 @@ onMounted(async () => {
       // Handle birthday date formatting
       if (props.account.contact.birthday) {
         const birthday = new Date(props.account.contact.birthday)
-        accountForm.birthday.value = birthday.toISOString().split('T')[0]
+        accountForm.birthday.value = birthday.toISOString().split('T')[0] || ''
       }
     }
     

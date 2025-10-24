@@ -163,7 +163,7 @@
               <div v-if="transferResults[policy.id]" class="transfer-result">
                 <div class="refund-amount">
                   <span class="refund-label">Refund Amount:</span>
-                  <span class="refund-value">${{ transferResults[policy.id].refundAmount.toFixed(2) }}</span>
+                  <span class="refund-value">${{ transferResults[policy.id]?.refundAmount?.toFixed(2) || 0 }}</span>
                 </div>
                 <p class="transfer-note">This policy will be transferred to your new policy</p>
               </div>
@@ -281,7 +281,7 @@ const searchPolicies = async () => {
       policies = await policyService.getPoliciesByCustomerNumber(searchValue.value, filters)
       console.log(policies)
       // If we found policies, get the customer info from the first policy
-      if (policies.length > 0 && policies[0].applicants) {
+      if (policies.length > 0 && policies[0]?.applicants) {
         foundCustomer.value = policies[0].applicants
         // Automatically use the customer information
         useCustomer()

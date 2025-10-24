@@ -103,7 +103,7 @@ export const validationRules = {
     const currentYear = currentDate.getFullYear() % 100
     const currentMonth = currentDate.getMonth() + 1
     
-    if (parseInt(year) < currentYear || (parseInt(year) === currentYear && parseInt(month) < currentMonth)) {
+    if (parseInt(year || '0') < currentYear || (parseInt(year || '0') === currentYear && parseInt(month || '0') < currentMonth)) {
       return { isValid: false, message: 'Card has expired' }
     }
     return { isValid: true, message: '' }
@@ -171,6 +171,6 @@ export const luhnCheck = (num: string): boolean => {
     .map(x => parseInt(x))
   let lastDigit = arr.splice(0, 1)[0]
   let sum = arr.reduce((acc, val, i) => (i % 2 !== 0 ? acc + val : acc + ((val * 2) % 9) || 9), 0)
-  sum += lastDigit
+  sum += lastDigit || 0
   return sum % 10 === 0
 }

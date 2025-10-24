@@ -101,7 +101,7 @@ const availableTabs = computed(() => {
 onMounted(() => {
   // User data is already loaded by DashboardLayout
   if (availableTabs.value.length > 0) {
-    activeTab.value = availableTabs.value[0].id
+    activeTab.value = availableTabs.value[0]?.id || ''
   }
 })
 </script>

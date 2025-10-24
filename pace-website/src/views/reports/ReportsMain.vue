@@ -491,14 +491,16 @@ const updateComparisonGraph = () => {
   if (!chartInstance) return
 
   const baseData = getGraphData()
-  const datasets = [baseData.datasets[0]]
+  const datasets = baseData.datasets.filter(Boolean)
 
   comparisons.value.forEach(comparison => {
-    datasets.push({
-      ...comparison.data.datasets[0],
-      borderColor: comparison.color,
-      backgroundColor: comparison.color.replace('rgb', 'rgba').replace(')', ', 0.1)')
-    })
+    if (comparison.data.datasets[0]) {
+      datasets.push({
+        ...comparison.data.datasets[0],
+        borderColor: comparison.color,
+        backgroundColor: comparison.color.replace('rgb', 'rgba').replace(')', ', 0.1)')
+      })
+    }
   })
 
   chartInstance.data = {
@@ -512,8 +514,8 @@ const updateComparisonGraph = () => {
 onMounted(async () => {
   // Set default date range (last 12 months)
   const now = new Date()
-  filters.dateFrom = new Date(now.getFullYear(), now.getMonth() - 11, 1).toISOString().split('T')[0]
-  filters.dateTo = now.toISOString().split('T')[0]
+  filters.dateFrom = new Date(now.getFullYear(), now.getMonth() - 11, 1).toISOString().split('T')[0] || ''
+  filters.dateTo = now.toISOString().split('T')[0] || ''
 
   await loadData()
 

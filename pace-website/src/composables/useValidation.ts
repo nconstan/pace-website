@@ -59,10 +59,13 @@ export function useValidation() {
     let isValid = true
 
     Object.keys(rules).forEach(fieldName => {
-      const fieldErrors = validateField(data[fieldName], rules[fieldName], fieldName)
-      if (fieldErrors.length > 0) {
-        allErrors[fieldName] = fieldErrors
-        isValid = false
+      const rule = rules[fieldName]
+      if (rule) {
+        const fieldErrors = validateField(data[fieldName], rule, fieldName)
+        if (fieldErrors.length > 0) {
+          allErrors[fieldName] = fieldErrors
+          isValid = false
+        }
       }
     })
 

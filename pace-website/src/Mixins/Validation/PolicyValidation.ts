@@ -146,9 +146,15 @@ export const markFieldAsTouched = (touchedFields: any, path: string) => {
   const pathArray = path.split('.')
   let current: any = touchedFields
   for (let i = 0; i < pathArray.length - 1; i++) {
-    current = current[pathArray[i]]
+    const key = pathArray[i]
+    if (key) {
+      current = current[key]
+    }
   }
-  current[pathArray[pathArray.length - 1]] = true
+  const lastKey = pathArray[pathArray.length - 1]
+  if (lastKey) {
+    current[lastKey] = true
+  }
 }
 
 export const shouldShowError = (touchedFields: any, validationErrors: any, path: string) => {
@@ -157,12 +163,15 @@ export const shouldShowError = (touchedFields: any, validationErrors: any, path:
   let errorCurrent: any = validationErrors
   
   for (let i = 0; i < pathArray.length - 1; i++) {
-    touchedCurrent = touchedCurrent[pathArray[i]]
-    errorCurrent = errorCurrent[pathArray[i]]
+    const key = pathArray[i]
+    if (key) {
+      touchedCurrent = touchedCurrent[key]
+      errorCurrent = errorCurrent[key]
+    }
   }
   
   const fieldName = pathArray[pathArray.length - 1]
-  return touchedCurrent[fieldName] && errorCurrent[fieldName]
+  return fieldName && touchedCurrent[fieldName] && errorCurrent[fieldName]
 }
 
 // Step validation functions

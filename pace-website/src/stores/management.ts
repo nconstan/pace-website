@@ -76,7 +76,7 @@ export const useManagementStore = defineStore('management', () => {
         const data = await adminService.getDealerships()
         dealerships.value = data
         dealershipsInitialized.value = true
-        selectedDealership.value = dealerships.value[0]
+        selectedDealership.value = dealerships.value[0] || null
       } catch (error) {
         console.error('Failed to initialize dealerships:', error)
       }

@@ -175,7 +175,7 @@ onMounted(async () => {
   try {
     await store.initializeDealerships()
     if (store.dealerships.length > 0) {
-      store.selectedDealership = store.dealerships[0]
+      store.selectedDealership = store.dealerships[0] || null
     }
     
     // Check if this is a policy transfer (has policyId parameter)

@@ -81,7 +81,7 @@
 
 <script setup lang="ts">
 import { products } from '../../Mixins/constants';
-import { productPriceDetail } from '../PolicyCreation/PolicyCreation.vue';
+import type { productPriceDetail } from '../PolicyCreation/PolicyCreation.vue';
 
 // This component receives props from the parent PolicyCreation component
 const props = defineProps<{
@@ -116,7 +116,7 @@ const selectProductAndTerm = (productName: string, term: number, price: number) 
   else props.policyData.selectedProducts[1].productTerm = props.policyData.selectedProducts[0].productTerm
   if(index === 0 && props.policyData.selectedProducts[1].productName !== ''){
     props.policyData.selectedProducts[1].productTerm = props.policyData.selectedProducts[0].productTerm
-    props.policyData.selectedProducts[1].price = props.pricingData.products.find(p => p.productName === props.policyData.selectedProducts[1].productName)?.priceAtMonth.find(p => p.month === term)?.price || 0
+    props.policyData.selectedProducts[1].price = props.pricingData.products.find((p: any) => p.productName === props.policyData.selectedProducts[1].productName)?.priceAtMonth.find((p: any) => p.month === term)?.price || 0
   } 
   
   // Force reactivity by triggering a change
