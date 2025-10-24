@@ -44,11 +44,11 @@ app.use('/api', apiRoutes);
 
 // Serve static files from the frontend build
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static('../pace-website/dist'));
+  app.use(express.static('public'));
   
   // Catch all handler for SPA routing
   app.get('*', (req, res) => {
-    res.sendFile('index.html', { root: '../pace-website/dist' });
+    res.sendFile('index.html', { root: 'public' });
   });
 }
 
