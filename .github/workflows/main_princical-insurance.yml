@@ -60,11 +60,18 @@ jobs:
           cd server
           npm ci --only=production
 
+      - name: Create deployment package
+        run: |
+          mkdir -p deployment
+          cp -r server/* deployment/
+          cp server/package.json deployment/
+          cp -r server/node_modules deployment/
+
       - name: Upload server artifact for deployment
         uses: actions/upload-artifact@v4
         with:
           name: server-app
-          path: server/
+          path: deployment/
 
   deploy:
     runs-on: ubuntu-latest
