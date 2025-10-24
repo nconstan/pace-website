@@ -22,10 +22,14 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '20.x'
-          cache: 'npm'
 
-      - name: Install dependencies
+      - name: Clear npm cache and install dependencies
         run: |
+          npm cache clean --force
+          rm -rf node_modules package-lock.json
+          rm -rf server/node_modules server/package-lock.json
+          rm -rf pace-website/node_modules pace-website/package-lock.json
+          
           npm install
           cd server && npm install
           cd ../pace-website && npm install
@@ -38,7 +42,7 @@ jobs:
       - name: Build website
         run: |
           cd pace-website
-          npm ci --force
+          rm -rf node_modules/.vite
           npm run build
 
       - name: Run tests
