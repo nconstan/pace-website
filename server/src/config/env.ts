@@ -44,7 +44,7 @@ if (missingEnvVars.length > 0) {
 // Export environment variables with type safety
 export const env: EnvironmentVariables = {
   DATABASE_URL: process.env.DATABASE_URL!,
-  DIRECT_URL: process.env.DIRECT_URL,
+  DIRECT_URL: process.env.DIRECT_URL || '',
   SUPABASE_URL: process.env.SUPABASE_URL!,
   SUPABASE_KEY: process.env.SUPABASE_KEY,
   SUPABASE_PROJECT_URL: process.env.SUPABASE_PROJECT_URL!,
