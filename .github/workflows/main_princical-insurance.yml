@@ -37,7 +37,7 @@ jobs:
       - name: Generate Prisma Client
         run: |
           cd server
-          npm run prisma generate
+          npx run prisma generate
 
       - name: Build server
         run: |
