@@ -1,45 +1,45 @@
 import { Router } from 'express';
 
+// Import all v1 route modules
+import authRoutes from './v1/auth.routes';
+import dashboardRoutes from './v1/dashboard.routes';
+import policyRoutes from './v1/policy.routes';
+import claimsRoutes from './v1/claims.routes';
+import adminRoutes from './v1/admin.routes';
+import actionQueueRoutes from './v1/actionQueue.routes';
+import reportsRoutes from './v1/reports.routes';
+import settingsRoutes from './v1/settings.routes';
+
 const router = Router();
 
-// Example API routes
+// API status endpoint
 router.get('/status', (req, res) => {
   res.json({
     success: true,
-    message: 'API is running',
+    message: 'PACE Insurance API is running',
+    version: '1.0.0',
     timestamp: new Date().toISOString()
   });
 });
 
-// Insurance-related routes
-router.get('/insurance/types', (req, res) => {
-  res.json({
-    success: true,
-    data: [
-      { id: 1, name: 'Auto Insurance', description: 'Comprehensive auto coverage' },
-      { id: 2, name: 'Home Insurance', description: 'Protect your home and belongings' },
-      { id: 3, name: 'Life Insurance', description: 'Financial security for your family' },
-      { id: 4, name: 'Health Insurance', description: 'Medical coverage and wellness' }
-    ]
-  });
-});
-
-router.get('/insurance/quotes', (req, res) => {
-  // This would typically connect to a database or external service
-  res.json({
-    success: true,
-    message: 'Quote generation endpoint - implement your business logic here'
-  });
-});
-
-// Random number endpoint
+// Random number endpoint (for testing)
 router.get('/random', (req, res) => {
-  const randomNumber = Math.floor(Math.random() * 1000) + 1; // Random number between 1-1000
+  const randomNumber = Math.floor(Math.random() * 1000) + 1;
   res.json({
     success: true,
     randomNumber: randomNumber,
     timestamp: new Date().toISOString()
   });
 });
+
+// Mount all v1 routes
+router.use('/v1/auth', authRoutes);
+router.use('/v1/dashboard', dashboardRoutes);
+router.use('/v1/policies', policyRoutes);
+router.use('/v1/claims', claimsRoutes);
+router.use('/v1/admin', adminRoutes);
+router.use('/v1/action-queue', actionQueueRoutes);
+router.use('/v1/reports', reportsRoutes);
+router.use('/v1/settings', settingsRoutes);
 
 export default router;

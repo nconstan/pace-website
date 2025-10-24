@@ -48,13 +48,29 @@ app.get('/health', (req, res) => {
 // API routes
 app.use('/api', apiRoutes);
 
-// Serve static files from the frontend build (public dir relative to dist/)
-app.use(express.static(path.join(__dirname, 'public')));
-
-// Catch all handler for SPA routing (serve index.html for non-API routes)
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
+// Serve static files from the frontend build (only in production)
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, 'public')));
+  
+  // Catch all handler for SPA routing
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  });
+} else {
+  // In development, serve a simple API info page
+  app.get('/', (req, res) => {
+    res.json({
+      message: 'PACE Insurance API Server',
+      status: 'running',
+      environment: 'development',
+      endpoints: {
+        health: '/health',
+        api: '/api/*',
+        random: '/api/random'
+      }
+    });
+  });
+}
 
 // Error handling middleware (notFound should rarely trigger now, except for true 404s like missing assets)
 app.use(notFound);
