@@ -1,0 +1,36 @@
+{
+  "name": "pace-insurance-monorepo",
+  "version": "1.0.0",
+  "description": "PACE Insurance - Full Stack Application",
+  "private": true,
+  "workspaces": [
+    "pace-website",
+    "server"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:website\"",
+    "dev:server": "cd server && npm run dev",
+    "dev:website": "cd pace-website && npm run dev",
+    "build": "npm run build:server && npm run build:website",
+    "build:server": "cd server && npm run build",
+    "build:website": "cd pace-website && npm run build",
+    "start": "cd server && npm start",
+    "install:all": "npm install && cd server && npm install && cd ../pace-website && npm install",
+    "clean": "npm run clean:server && npm run clean:website",
+    "clean:server": "cd server && npm run clean",
+    "clean:website": "cd pace-website && npm run clean",
+    "test": "npm run test:server && npm run test:website",
+    "test:server": "cd server && npm test",
+    "test:website": "cd pace-website && npm run test:unit",
+    "lint": "npm run lint:server && npm run lint:website",
+    "lint:server": "cd server && npm run lint",
+    "lint:website": "cd pace-website && npm run lint"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  },
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0",
+    "npm": ">=10.0.0"
+  }
+}
