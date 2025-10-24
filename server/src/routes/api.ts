@@ -1,14 +1,14 @@
 import { Router } from 'express';
 
 // Import all v1 route modules
-import authRoutes from './v1/auth.routes';
-import dashboardRoutes from './v1/dashboard.routes';
-import policyRoutes from './v1/policy.routes';
-import claimsRoutes from './v1/claims.routes';
-import adminRoutes from './v1/admin.routes';
-import actionQueueRoutes from './v1/actionQueue.routes';
-import reportsRoutes from './v1/reports.routes';
-import settingsRoutes from './v1/settings.routes';
+import authRoutes from './v1/auth.routes.ts';
+import dashboardRoutes from './v1/dashboard.routes.ts';
+import policyRoutes from './v1/policy.routes.ts';
+import claimsRoutes from './v1/claims.routes.ts';
+import adminRoutes from './v1/admin.routes.ts';
+import actionQueueRoutes from './v1/actionQueue.routes.ts';
+import reportsRoutes from './v1/reports.routes.ts';
+import settingsRoutes from './v1/settings.routes.ts';
 
 const router = Router();
 

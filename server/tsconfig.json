@@ -23,7 +23,9 @@
     "noUncheckedIndexedAccess": false,
     "noImplicitOverride": false,
     "exactOptionalPropertyTypes": false,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "allowImportingTsExtensions": true,
+    "noEmit": true
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
