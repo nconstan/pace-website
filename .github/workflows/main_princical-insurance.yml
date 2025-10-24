@@ -64,8 +64,10 @@ jobs:
         run: |
           mkdir -p deployment
           cp -r server/* deployment/
-          cp server/package.json deployment/
-          cp -r server/node_modules deployment/
+          # Copy node_modules if it exists, otherwise it will be installed by Azure
+          if [ -d "server/node_modules" ]; then
+            cp -r server/node_modules deployment/
+          fi
 
       - name: Upload server artifact for deployment
         uses: actions/upload-artifact@v4
