@@ -55,6 +55,11 @@ jobs:
           mkdir -p server/dist/public
           cp -r pace-website/dist/* server/dist/public/
 
+      - name: Install production dependencies in server
+        run: |
+          cd server
+          npm ci --only=production
+
       - name: Upload server artifact for deployment
         uses: actions/upload-artifact@v4
         with:
