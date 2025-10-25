@@ -22,6 +22,9 @@ interface EnvironmentVariables {
   // Server
   PORT: string;
   NODE_ENV: string;
+
+  //email
+  EMAIL_CLIENT_SECRET: string;
 }
 
 // Validate required environment variables
@@ -31,7 +34,8 @@ const requiredEnvVars: (keyof EnvironmentVariables)[] = [
   'SUPABASE_PROJECT_URL',
   'SUPABASE_ANON_KEY',
   'JWT_SECRET',
-  'PORT'
+  'PORT',
+  'EMAIL_CLIENT_SECRET'
 ];
 
 // Check for missing required environment variables
@@ -52,7 +56,8 @@ export const env: EnvironmentVariables = {
   SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
   JWT_SECRET: process.env.JWT_SECRET!,
   PORT: process.env.PORT || '3000',
-  NODE_ENV: process.env.NODE_ENV || 'development'
+  NODE_ENV: process.env.NODE_ENV || 'development',
+  EMAIL_CLIENT_SECRET: process.env.EMAIL_CLIENT_SECRET!
 };
 
 // Export individual variables for convenience
@@ -64,7 +69,8 @@ export const {
   SUPABASE_SERVICE_ROLE_KEY,
   JWT_SECRET,
   PORT,
-  NODE_ENV
+  NODE_ENV,
+  EMAIL_CLIENT_SECRET
 } = env;
 
 // Export environment check helpers
