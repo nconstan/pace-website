@@ -2,7 +2,7 @@ import axios from 'axios'
 
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000',
+  baseURL: import.meta.env.VITE_API_URL || 'https://princical-insurance-f8dkerfmhyb4gpd7.canadacentral-01.azurewebsites.net/',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json'
