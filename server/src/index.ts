@@ -20,7 +20,14 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Security middleware
-app.use(helmet());
+app.use(
+  helmet.contentSecurityPolicy({
+    directives: {
+      defaultSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https://images.pexels.com"],
+    },
+  })
+);
 
 // CORS configuration
 app.use(cors({
