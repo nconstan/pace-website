@@ -49,7 +49,7 @@ const goToLanding = () => {
       <div class="login-header">
         <div class="logo" @click="goToLanding">
           <Shield class="logo-icon" />
-          <span class="logo-text">AutoGuard Insurance</span>
+          <span class="logo-text">P.A.C.E Insurance</span>
         </div>
       </div>
       

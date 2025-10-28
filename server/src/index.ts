@@ -2,7 +2,7 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import cors from 'cors';
-import helmet from 'helmet';
+//import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
 import { errorHandler } from './middleware/errorHandler.js';
@@ -20,14 +20,15 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Security middleware
-app.use(
-  helmet.contentSecurityPolicy({
-    directives: {
-      defaultSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "https://images.pexels.com"],
-    },
-  })
-);
+// app.use(
+//   helmet.contentSecurityPolicy({
+//     directives: {
+//       defaultSrc: ["'self'"],
+//       connectSrc: ["'self'", "https://*.azurewebsites.net"],
+//       imgSrc: ["'self'", "data:", "https://images.pexels.com"],
+//     },
+//   })
+// );
 
 // CORS configuration
 app.use(cors({

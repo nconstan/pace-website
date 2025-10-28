@@ -58,7 +58,7 @@ const testimonials = [
         <div class="nav-brand">
           <div class="logo">
             <Shield class="logo-icon" />
-            <span class="logo-text">AutoGuard Insurance</span>
+            <span class="logo-text">P.A.C.E Insurance</span>
           </div>
         </div>
         <nav class="nav-menu">
@@ -115,7 +115,7 @@ const testimonials = [
     <section id="features" class="features">
       <div class="container">
         <div class="section-header">
-          <h2 class="section-title">Why Choose AutoGuard Insurance?</h2>
+          <h2 class="section-title">Why Choose P.A.C.E Insurance?</h2>
           <p class="section-description">
             We provide comprehensive protection with unmatched service and competitive pricing
           </p>
@@ -170,7 +170,7 @@ const testimonials = [
           <div class="footer-section">
             <div class="logo">
               <Shield class="logo-icon" />
-              <span class="logo-text">AutoGuard Insurance</span>
+              <span class="logo-text">P.A.C.E Insurance</span>
             </div>
             <p class="footer-description">
               Protecting your journey with comprehensive car insurance coverage and exceptional service.
@@ -180,11 +180,11 @@ const testimonials = [
             <h4 class="footer-title">Contact Info</h4>
             <div class="contact-item">
               <Phone class="contact-icon" />
-              <span>1-800-AUTOGUARD</span>
+              <span>1-800-P.A.C.E</span>
             </div>
             <div class="contact-item">
               <Mail class="contact-icon" />
-              <span>info@autoguard.com</span>
+              <span>info@P.A.C.E.com</span>
             </div>
           </div>
           <div class="footer-section">
@@ -195,7 +195,7 @@ const testimonials = [
           </div>
         </div>
         <div class="footer-bottom">
-          <p>&copy; 2024 AutoGuard Insurance. All rights reserved.</p>
+          <p>&copy; 2025 P.A.C.E Insurance. All rights reserved.</p>
         </div>
       </div>
     </footer>
