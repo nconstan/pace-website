@@ -18,7 +18,7 @@ export const useManagementStore = defineStore('management', () => {
   const accountsInitialized = ref(false)
   const dealershipsInitialized = ref(false)
   const dealerGroupsInitialized = ref(false)
-
+//console log to rebuild
   // Computed
   const totalAccounts = computed(() => accounts.value.length)
   const totalDealerships = computed(() => dealerships.value.length)
