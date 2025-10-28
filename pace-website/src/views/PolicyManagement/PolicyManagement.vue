@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, watch } from 'vue'
 import { User, MapPin, Car, Save, Edit, X, DollarSign, Calendar, Building } from 'lucide-vue-next'
 import { useManagementStore } from '../../stores/management'
 import policyService from '../../services/policy.service'
@@ -16,6 +16,8 @@ const loading = ref(false)
 const error = ref('')
 const showEditModal = ref(false)
 const selectedPolicy = ref<any>(null)
+const searchQuery = ref('')
+const filteredPolicies = ref<any[]>([])
 
 const policyData = reactive({
   // Editable applicant fields
@@ -31,7 +33,7 @@ const policyData = reactive({
   creationDate: '',
   sellerName: '',
   policyStatus: '',
-  policyPrice: '',
+  total_price: '',
   paymentMethod: '',
   
   // Vehicle information (read-only)
@@ -131,20 +133,20 @@ const loadPolicyData = async (policyId: string) => {
         creationDate: new Date(policy.created_at).toLocaleDateString(),
         sellerName: policy.seller_id || 'N/A', // You might want to fetch seller name
         policyStatus: getPolicyStatusText(policy.policy_status),
-        policyPrice: `$${policy.total_price?.toFixed(2) || '0.00'}`,
+        total_price: policy.total_price,
         paymentMethod: getPaymentMethodText(policy.policy_payment_method),
         
         // Vehicle information (read-only)
-        vehicleYear: policy.vehicle_details_policies_vehicle_detailsTovehicle_details?.model_year || '',
-        vehicleMake: policy.vehicle_details_policies_vehicle_detailsTovehicle_details?.make || '',
-        vehicleModel: policy.vehicle_details_policies_vehicle_detailsTovehicle_details?.model || '',
-        vin: policy.vehicle_details_policies_vehicle_detailsTovehicle_details?.vin || '',
-        odometer: policy.vehicle_details_policies_vehicle_detailsTovehicle_details?.odometer || '',
-        msrp: policy.vehicle_details_policies_vehicle_detailsTovehicle_details?.MSRP || '',
-        vehicleState: policy.vehicle_details_policies_vehicle_detailsTovehicle_details?.vehicle_state || '',
-        vehiclePurchaseYear: policy.vehicle_details_policies_vehicle_detailsTovehicle_details?.vehicle_purchase_year || '',
-        series: policy.vehicle_details_policies_vehicle_detailsTovehicle_details?.series || '',
-        body: policy.vehicle_details_policies_vehicle_detailsTovehicle_details?.body || ''
+        vehicleYear: policy.vehicle_details?.model_year || '',
+        vehicleMake: policy.vehicle_details?.make || '',
+        vehicleModel: policy.vehicle_details?.model || '',
+        vin: policy.vehicle_details?.vin || '',
+        odometer: policy.vehicle_details?.odometer || '',
+        msrp: policy.vehicle_details?.bought_vehicle_value || '',
+        vehicleState: policy.vehicle_details?.vehicle_state || '',
+        vehiclePurchaseYear: policy.vehicle_details?.vehicle_purchase_year || '',
+        series: policy.vehicle_details?.series || '',
+        body: policy.vehicle_details?.body || ''
       })
     }
   } catch (err: any) {
@@ -158,11 +160,36 @@ const loadPolicyData = async (policyId: string) => {
 // Helper function to convert policy status number to text
 const getPolicyStatusText = (status: number) => {
   switch (status) {
-    case 0: return 'Pending Confirmation'
+    case 0: return 'New Pending'
     case 1: return 'Active'
-    case 2: return 'Cancelled'
-    case 3: return 'Expired'
+    case 2: return 'Expired'
+    case 3: return 'Cancel Pending'
+    case 4: return 'Canceled'
+    case 5: return 'Transferred'
+    case 6: return 'Reinstated'
+    case 7: return 'Void'
+    case 8: return 'Lapsed'
+    case 9: return 'Claim Pending'
+    case 10: return 'Future'
     default: return 'Unknown'
+  }
+}
+
+// Helper function to get status chip class
+const getStatusChipClass = (status: number) => {
+  switch (status) {
+    case 0: return 'status-new-pending'
+    case 1: return 'status-active'
+    case 2: return 'status-expired'
+    case 3: return 'status-cancel-pending'
+    case 4: return 'status-canceled'
+    case 5: return 'status-transferred'
+    case 6: return 'status-reinstated'
+    case 7: return 'status-void'
+    case 8: return 'status-lapsed'
+    case 9: return 'status-claim-pending'
+    case 10: return 'status-future'
+    default: return 'status-unknown'
   }
 }
 
@@ -179,6 +206,7 @@ const getPaymentMethodText = (method: number) => {
 
 const openEditModal = (policy: any) => {
   selectedPolicy.value = policy
+  console.log("policy received:", policy)
   showEditModal.value = true
 }
 
@@ -211,19 +239,92 @@ const handlePolicyUpdate = async (updatedData: any) => {
 
 // Format policy data for display TODO this is so inefficent and needs to be improved
 const formatPolicyData = (policy: any) => {
-  console.log(policy)
+  console.log('formatPolicyData policy:', policy)
   return {
     id: policy.id,
     number: `${policy.id?.toString().padStart(6, '0')}`,
-    holder: policy.applicants.first_name_1 + ' ' + policy.applicants.last_name_1 || 'Unknown Customer',
-    vehicle: policy.vehicle_details.model_year + ' ' + policy.vehicle_details.make + ' ' + policy.vehicle_details.model || 'Vehicle Info Unavailable',
+    holder: (policy.applicants?.first_name_1 || '') + ' ' + (policy.applicants?.last_name_1 || '') || 'Unknown Customer',
+    vehicle: (policy.vehicle_details?.model_year || '') + ' ' + (policy.vehicle_details?.make || '') + ' ' + (policy.vehicle_details?.model || '') || 'Vehicle Info Unavailable',
     term: policy.policy_term,
     price: policy.total_price,
     productType: policy.products,
-    dealership: policy.dealerships.name,
-    vin: policy.vehicle_details.VIN
+    dealership: policy.dealerships?.name || 'Unknown Dealership',
+    vin: policy.vehicle_details?.vin || 'Unknown VIN'
   }
 }
+
+// Search and filter policies
+const filterPolicies = () => {
+  if (!searchQuery.value.trim()) {
+    filteredPolicies.value = managementStore.policies
+    return
+  }
+  
+  const query = searchQuery.value.toLowerCase().trim()
+  
+  filteredPolicies.value = managementStore.policies.filter(policy => {
+    // Search in policy number
+    const policyNumber = policy.id?.toString().padStart(6, '0') || ''
+    if (policyNumber.includes(query)) return true
+    
+    // Search in applicant names
+    const firstName1 = policy.applicants?.first_name_1?.toLowerCase() || ''
+    const lastName1 = policy.applicants?.last_name_1?.toLowerCase() || ''
+    const firstName2 = policy.applicants?.first_name_2?.toLowerCase() || ''
+    const lastName2 = policy.applicants?.last_name_2?.toLowerCase() || ''
+    const fullName1 = `${firstName1} ${lastName1}`.trim()
+    const fullName2 = `${firstName2} ${lastName2}`.trim()
+    
+    if (firstName1.includes(query) || lastName1.includes(query) || 
+        firstName2.includes(query) || lastName2.includes(query) ||
+        fullName1.includes(query) || fullName2.includes(query)) return true
+    
+    // Search in customer number
+    const customerNumber = policy.applicants?.customer_number?.toString() || ''
+    if (customerNumber.includes(query)) return true
+    
+    // Search in dealership name
+    const dealershipName = policy.dealerships?.name?.toLowerCase() || ''
+    const dealershipNickname = policy.dealerships?.nickname?.toLowerCase() || ''
+    if (dealershipName.includes(query) || dealershipNickname.includes(query)) return true
+    
+    // Search in dealer group (if available)
+    const dealerGroup = policy.dealer_groups?.full_name?.toLowerCase() || ''
+    const dealerGroupNickname = policy.dealer_groups?.nickname?.toLowerCase() || ''
+    if (dealerGroup.includes(query) || dealerGroupNickname.includes(query)) return true
+    
+    // Search in vehicle details
+    const vin = policy.vehicle_details?.vin?.toLowerCase() || ''
+    const make = policy.vehicle_details?.make?.toLowerCase() || ''
+    const model = policy.vehicle_details?.model?.toLowerCase() || ''
+    const series = policy.vehicle_details?.series?.toLowerCase() || ''
+    const vehicleYear = policy.vehicle_details?.model_year?.toString() || ''
+    
+    if (vin.includes(query) || make.includes(query) || model.includes(query) || 
+        series.includes(query) || vehicleYear.includes(query)) return true
+    
+    // Search in seller information
+    const sellerFirstName = policy.seller?.contacts_accounts_contact_idTocontacts?.first_name?.toLowerCase() || ''
+    const sellerLastName = policy.seller?.contacts_accounts_contact_idTocontacts?.last_name?.toLowerCase() || ''
+    const sellerUsername = policy.seller?.username?.toLowerCase() || ''
+    const sellerFullName = `${sellerFirstName} ${sellerLastName}`.trim()
+    
+    if (sellerFirstName.includes(query) || sellerLastName.includes(query) || 
+        sellerUsername.includes(query) || sellerFullName.includes(query)) return true
+    
+    return false
+  })
+}
+
+// Watch for search query changes
+watch(searchQuery, () => {
+  filterPolicies()
+})
+
+// Watch for policies changes and update filtered list
+watch(() => managementStore.policies, () => {
+  filterPolicies()
+}, { deep: true })
 
 onMounted(() => {
   fetchPolicies()
@@ -237,6 +338,29 @@ onMounted(() => {
       <p class="page-description">
         Manage and update policy information for your customers
       </p>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="search-section">
+      <div class="search-container">
+        <div class="search-input-wrapper">
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="Search by name, customer number, policy number, dealership, dealer group, seller name, or vehicle details..."
+            class="search-input"
+          />
+          <div class="search-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <path d="m21 21-4.35-4.35"></path>
+            </svg>
+          </div>
+        </div>
+        <div v-if="searchQuery" class="search-results-info">
+          {{ filteredPolicies.length }} of {{ managementStore.policies.length }} policies
+        </div>
+      </div>
     </div>
 
     <!-- Loading State -->
@@ -260,39 +384,44 @@ onMounted(() => {
         </button>
       </div>
       
-      <div v-if="managementStore.policies.length === 0" class="no-policies">
-        <p>No policies found. Create a new policy to get started.</p>
+      <div v-if="filteredPolicies.length === 0" class="no-policies">
+        <p v-if="searchQuery">No policies found matching "{{ searchQuery }}". Try a different search term.</p>
+        <p v-else>No policies found. Create a new policy to get started.</p>
       </div>
       
       <div v-else class="policy-grid">
         <div
-          v-for="policy in managementStore.policies"
+          v-for="policy in filteredPolicies"
           :key="policy.id"
           class="policy-card"
           :class="{ 'policy-selected': selectedPolicyId === policy.id }"
           @click="loadPolicyData(policy.id)"
         >
           <div class="policy-info">
-            <div class="policy-number">{{ formatPolicyData(policy).number }}</div>
-            <div class="policy-holder">{{ formatPolicyData(policy).holder }}</div>
-            <div class="policy-vehicle">{{ formatPolicyData(policy).vehicle }}</div>
+            <div class="policy-header">
+              <div class="policy-number">{{ policy.id?.toString().padStart(6, '0') }}</div>
+              <div class="status-chip" :class="getStatusChipClass(policy.policy_status)">
+                {{ getPolicyStatusText(policy.policy_status) }}
+              </div>
+            </div>
+            <div class="policy-holder">{{ policy.applicants?.first_name_1 || '' }} {{ policy.applicants?.last_name_1 || '' }}</div>
+            <div class="policy-vehicle">{{ policy.vehicle_details?.model_year || '' }} {{ policy.vehicle_details?.make || '' }} {{ policy.vehicle_details?.model || '' }}</div>
             <div class="policy-details">
               <span class="policy-term">
                 <Calendar class="detail-icon" />
-                {{ formatPolicyData(policy).term }} months
+                {{ policy.policy_term }} months
               </span>
               <span class="policy-price">
                 <DollarSign class="detail-icon" />
-                ${{ formatPolicyData(policy).price }}
+                ${{ policy.total_price }}
               </span>
               <span class="policy-dealership">
                 <Building class="detail-icon" />
-                {{ formatPolicyData(policy).dealership }}
+                {{ policy.dealerships?.nickname || policy.dealerships?.name || 'Unknown Dealership' }}
               </span>
             </div>
           </div>
           <div class="policy-actions">
-            <button class="select-button">Select</button>
             <button 
               @click.stop="openEditModal(policy)" 
               class="edit-button"
@@ -353,13 +482,15 @@ onMounted(() => {
             </div>
             <div class="form-group">
               <label class="form-label">Policy Status</label>
-              <div class="form-display status-badge" :class="'status-' + policyData.policyStatus.toLowerCase().replace(' ', '-')">
-                {{ policyData.policyStatus }}
+              <div class="form-display">
+                <div class="status-chip" :class="getStatusChipClass(selectedPolicy?.policy_status)">
+                  {{ getPolicyStatusText(selectedPolicy?.policy_status) }}
+                </div>
               </div>
             </div>
             <div class="form-group">
               <label class="form-label">Policy Price</label>
-              <div class="form-display price-display">{{ policyData.policyPrice }}</div>
+              <div class="form-display price-display">{{ policyData.total_price }}</div>
             </div>
             <div class="form-group">
               <label class="form-label">Payment Method</label>
@@ -526,6 +657,56 @@ onMounted(() => {
   color: #6b7280;
   font-size: 1.1rem;
   margin: 0;
+}
+
+/* Search Section */
+.search-section {
+  margin-bottom: 2rem;
+}
+
+.search-container {
+  max-width: 100%;
+}
+
+.search-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-input {
+  width: 100%;
+  padding: 0.875rem 1rem 0.875rem 3rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 0.75rem;
+  font-size: 1rem;
+  background: white;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #2A525A;
+  box-shadow: 0 0 0 3px rgba(42, 82, 90, 0.1);
+}
+
+.search-input::placeholder {
+  color: #9ca3af;
+}
+
+.search-icon {
+  position: absolute;
+  left: 1rem;
+  color: #6b7280;
+  pointer-events: none;
+}
+
+.search-results-info {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: #6b7280;
+  font-weight: 500;
 }
 
 .loading-state,
@@ -828,17 +1009,18 @@ onMounted(() => {
   align-items: center;
 }
 
-.status-badge {
+.status-chip {
   display: inline-block;
   padding: 0.25rem 0.75rem;
   border-radius: 9999px;
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  white-space: nowrap;
 }
 
-.status-pending-confirmation {
+.status-new-pending {
   background-color: #fef3c7;
   color: #92400e;
 }
@@ -848,14 +1030,61 @@ onMounted(() => {
   color: #065f46;
 }
 
-.status-cancelled {
+.status-expired {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.status-cancel-pending {
+  background-color: #fde68a;
+  color: #b45309;
+}
+
+.status-canceled {
   background-color: #fee2e2;
   color: #991b1b;
 }
 
-.status-expired {
+.status-transferred {
+  background-color: #e0e7ff;
+  color: #3730a3;
+}
+
+.status-reinstated {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.status-void {
   background-color: #f3f4f6;
-  color: #374151;
+  color: #6b7280;
+}
+
+.status-lapsed {
+  background-color: #fef2f2;
+  color: #dc2626;
+}
+
+.status-claim-pending {
+  background-color: #fef3c7;
+  color: #d97706;
+}
+
+.status-future {
+  background-color: #e0f2fe;
+  color: #0369a1;
+}
+
+.status-unknown {
+  background-color: #f3f4f6;
+  color: #6b7280;
+}
+
+.policy-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
 }
 
 .price-display {

@@ -30,10 +30,14 @@ const totalSteps = 4
 const validationErrors = createValidationErrors()
 const touchedFields = createTouchedFields()
 
-// Refund calculation state
-const refundAmount = ref(0)
+// Policy creation state
+const isCreatingPolicy = ref(false)
+const policyCreationError = ref('')
+
+// Transfer mode state
 const isTransferMode = ref(false)
 const originalPolicyId = ref('')
+const refundAmount = ref(0)
 
 // Find Policy Modal state
 const showFindPolicyModal = ref(false)
@@ -142,7 +146,7 @@ const policyData = reactive({
     monthlyPaymentDate:15,
   },
   dealership: null as any,
-  transfered_from: null as any,
+  transfered_from: undefined,
 })
 
 
@@ -323,6 +327,9 @@ const saveQuote = () => {
 }
 
 const submitPolicy = async () => {
+  // Prevent multiple submissions
+  if (isCreatingPolicy.value) return
+  
   // Handle policy submission
   if(!policyData.applicant.isOrganization) {
     policyData.contactInfo.primary.name.value = policyData.applicant.primaryName
@@ -339,15 +346,54 @@ const submitPolicy = async () => {
     policyData.dealership = policyData.dealership.id
   }
 
-  if(isTransferMode.value) {
-    policyData.transfered_from = originalPolicyId.value
+  // Handle transfer data
+  try {
+    console.log('Processing transfer data...')
+    console.log('isTransferMode.value:', isTransferMode.value)
+    console.log('originalPolicyId.value:', originalPolicyId.value)
+    
+    if(isTransferMode.value) {
+      console.log('Transfer mode, setting transfered_from to:', originalPolicyId.value)
+      policyData.transfered_from = originalPolicyId.value
+    } else {
+      console.log('Not transfer mode, removing transfered_from field')
+      // Remove the field entirely if not in transfer mode
+      delete policyData.transfered_from
+    }
+    
+    console.log('Transfer processing complete')
+  } catch (error) {
+    console.error('Error in transfer processing:', error)
+    // Continue without transfer data
+    delete policyData.transfered_from
   }
   
-  let policy = await policyService.createPolicy(policyData)
-  if(policy) {
-    alert('Policy created successfully!')
-  } else {
-    alert('Failed to create policy')
+  try {
+    isCreatingPolicy.value = true
+    policyCreationError.value = ''
+    
+    console.log('About to call policyService.createPolicy')
+    let response = await policyService.createPolicy(policyData)
+    console.log("response", response)
+    console.log("response type:", typeof response)
+    console.log("response keys:", Object.keys(response || {}))
+    
+    if(response && response.message && response.data) {
+      alert('Policy created successfully!')
+      // Optionally redirect or reset form
+      // window.location.href = '/dashboard/policy-management'
+    } else {
+      console.log('Unexpected response format:', response)
+      policyCreationError.value = 'Failed to create policy. Please try again.'
+    }
+  } catch (error) {
+    console.error('Policy creation error:', error)
+    console.error('Error details:', error.message)
+    console.error('Error stack:', error.stack)
+    policyCreationError.value = 'An error occurred while creating the policy. Please try again.'
+  } finally {
+    console.log('Setting isCreatingPolicy to false')
+    isCreatingPolicy.value = false
   }
 }
 
@@ -360,10 +406,12 @@ const closeFindPolicyModal = () => {
 }
 
 const handlePolicySelection = (policyId: string, refundAmountValue: number) => {
+  console.log('handlePolicySelection called with:', { policyId, refundAmountValue })
   isTransferMode.value = true
   originalPolicyId.value = policyId
   refundAmount.value = refundAmountValue
   showFindPolicyModal.value = false
+  console.log('Transfer mode set:', { isTransferMode: isTransferMode.value, originalPolicyId: originalPolicyId.value, refundAmount: refundAmount.value })
 }
 
 const handleCustomerSelection = (customer: any) => {
@@ -375,8 +423,8 @@ const handleCustomerSelection = (customer: any) => {
       console.log("customer", customer)
       
       // Populate the form with existing customer data
-      policyData.applicant.primaryName = customer.first_name_1 || ''
-      policyData.applicant.secondaryName = customer.first_name_2 || ''
+      policyData.applicant.primaryName = customer.first_name_1 + ' ' + customer.last_name_1 || ''
+      policyData.applicant.secondaryName = customer.first_name_2 + ' ' + customer.last_name_2 || ''
       policyData.applicant.postalCode = customer.postal_code || ''
       policyData.applicant.street = customer.address_1 || ''
       policyData.applicant.street2 = customer.address_2 || ''
@@ -386,13 +434,12 @@ const handleCustomerSelection = (customer: any) => {
       policyData.applicant.customerNumber = customer.customer_number || null
       
       // Populate contact info
-      policyData.contactInfo.primary.name.value = customer.first_name_1 || ''
+      policyData.contactInfo.primary.name.value = customer.first_name_1 + ' ' + customer.last_name_1 || ''
       policyData.contactInfo.primary.phoneNumber.value = customer.phone_number_1 || ''
       policyData.contactInfo.primary.email.value = customer.email_1 || ''
-      policyData.contactInfo.secondary.name.value = customer.first_name_2 || ''
+      policyData.contactInfo.secondary.name.value = customer.first_name_2 + ' ' + customer.last_name_2 || ''
       policyData.contactInfo.secondary.phoneNumber.value = customer.phone_number_2 || ''
       policyData.contactInfo.secondary.email.value = customer.email_2 || ''
-      
 }
 
 // const lookupCustomer = async () => {
@@ -518,7 +565,7 @@ const clearCustomerLookup = () => {
     </div>
 
     <!-- Customer Found Section -->
-    <div v-if="existingCustomer" class="customer-found-section">
+    <div v-if="existingCustomer && currentStep === 1" class="customer-found-section">
       <div class="customer-found-card">
         <h3>Customer Information Loaded</h3>
         <p><strong>Customer #{{ existingCustomer.customer_number }}</strong> - {{ existingCustomer.first_name_1 }}{{ existingCustomer.first_name_2 ? ' ' + existingCustomer.first_name_2 : '' }}</p>
@@ -585,6 +632,17 @@ const clearCustomerLookup = () => {
       @useCustomer="handleCustomerSelection"
     />
 
+    <!-- Policy Creation Error -->
+    <div v-if="policyCreationError" class="error-section">
+      <div class="error-card">
+        <h3>Policy Creation Error</h3>
+        <p>{{ policyCreationError }}</p>
+        <button @click="policyCreationError = ''" class="dismiss-error-button">
+          Dismiss
+        </button>
+      </div>
+    </div>
+
     <!-- Step Navigation Buttons -->
     <div class="step-actions">
       <button
@@ -621,9 +679,11 @@ const clearCustomerLookup = () => {
         v-if="currentStep === totalSteps"
         @click="submitPolicy"
         class="btn btn-success"
+        :disabled="isCreatingPolicy"
       >
-        <Check class="btn-icon" />
-        Submit Application
+        <div v-if="isCreatingPolicy" class="loading-spinner"></div>
+        <Check v-else class="btn-icon" />
+        {{ isCreatingPolicy ? 'Creating Policy...' : 'Submit Application' }}
       </button>
     </div>
   </div>
@@ -1435,6 +1495,62 @@ const clearCustomerLookup = () => {
 .btn-icon {
   width: 1.25rem;
   height: 1.25rem;
+}
+
+.loading-spinner {
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.error-section {
+  margin: 1rem 0;
+}
+
+.error-card {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  padding: 1.5rem;
+  border-radius: 0.75rem;
+  text-align: center;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.error-card h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.error-card p {
+  margin: 0 0 1rem 0;
+  font-size: 0.875rem;
+  opacity: 0.9;
+}
+
+.dismiss-error-button {
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.875rem;
+}
+
+.dismiss-error-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
 }
 
 @media (max-width: 768px) {

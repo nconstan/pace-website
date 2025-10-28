@@ -41,7 +41,7 @@ router.post('/create',
 
 router.post('/getPolicies', getPolicies);
 router.get('/search/email/:email', searchPoliciesByEmail);
-router.post('/customer/:customerNumber', getPoliciesByCustomerNumber);
+router.get('/customer/:customerNumber', getPoliciesByCustomerNumber);
 router.get('/:id', getPolicy);
 router.get('/:id/refund', calculateRefund);
 router.post('/:id/start-cancellation', startPolicyCancelation);

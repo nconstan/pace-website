@@ -141,8 +141,8 @@ class PolicyService {
     return response.data
   }
 
-  async getPoliciesByCustomerNumber(customerNumber: string, filters: any): Promise<Policy[]> {
-    const response = await api.post(`/api/v1/policies/customer/${customerNumber}`, { customerNumber, filters })
+  async getPoliciesByCustomerNumber(customerNumber: string, filters: any = {}): Promise<Policy[]> {
+    const response = await api.get(`/api/v1/policies/customer/${customerNumber}`, { params: filters })
     return response.data
   }
 

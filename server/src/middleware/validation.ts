@@ -189,7 +189,7 @@ export const createPolicySchema = z.object({
     dealerFinanceReference: z.string().optional()
   }),
   dealership: z.union([z.string(), z.number()]).optional(),
-  transfered_from: z.string().optional()
+  transfered_from: z.string().optional().nullable()
 });
 
 export const quickQuoteSchema = z.object({

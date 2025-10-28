@@ -23,67 +23,148 @@ const getPaymentMethodCode = (paymentMethod: string): number => {
 };
 
 export const getPoliciesByCustomerNumber = asyncHandler(async (req: any, res: Response): Promise<void> => {
-    const { customerNumber, filters } = req.body;
+    const customerNumber = req.params.customerNumber;
+    const filters = req.query; // Get filters from query parameters instead of body
     
-    // First, get the applicant ID for this customer number
-    const applicant = await prisma.applicants.findUnique({
-        where: {
-            customer_number: BigInt(customerNumber)
+    try {
+        // First, get the applicant ID for this customer number
+        const applicant = await prisma.applicants.findUnique({
+            where: {
+                customer_number: BigInt(customerNumber)
+            }
+        });
+        
+        if (!applicant) {
+            res.json([]);
+            return;
         }
-    });
-    
-    if (!applicant) {
-        res.json([]);
-        return;
-    }
-    
-    // Get policies that don't have active claims
-    const policies = await prisma.policies.findMany({
-        where: {
-            applicant_id: applicant.id,
-            policy_status: filters.policy_status || 1,
-            // Exclude policies that have active claims
-            NOT: {
+        
+        // Build where clause - no role checking, just filter by customer number
+        let whereClause: any = {
+            applicant_id: applicant.id
+        };
+        
+        // Apply additional filters if provided
+        if (filters?.policy_status !== undefined) {
+            whereClause.policy_status = parseInt(filters.policy_status);
+        }
+        
+        // Exclude policies that have active claims if specified
+        if (filters?.exclude_active_claims === 'true') {
+            whereClause.NOT = {
                 claims_details: {
                     some: {
                         active: 1
                     }
                 }
-            }
-        },
-        include: {
-            applicants: true,
-            vehicle_details_policies_vehicle_detailsTovehicle_details: true
-        },
-        orderBy: {
-            created_at: 'desc'
+            };
         }
-    });
-    
-    // Convert BigInt fields to strings for JSON serialization
-    const serializedPolicies = policies.map(policy => ({
-        id: policy.id.toString(),
-        policy_status: policy.policy_status,
-        applicants: policy.applicants ? {
-            first_name_1: policy.applicants.first_name_1,
-            first_name_2: policy.applicants.first_name_2,
-            last_name_1: policy.applicants.last_name_1,
-            last_name_2: policy.applicants.last_name_2,
-            email_1: policy.applicants.email_1,
-            email_2: policy.applicants.email_2,
-            phone_number_1: policy.applicants.phone_number_1,
-            phone_number_2: policy.applicants.phone_number_2,
-            address_1: policy.applicants.address_1,
-            address_2: policy.applicants.address_2,
-            city: policy.applicants.city,
-            province: policy.applicants.province,
-            postal_code: policy.applicants.postal_code,
-            is_company: policy.applicants.is_company,
-            customer_number: policy.applicants.customer_number.toString(),
-        } : null,
-    }));
-    
-    res.json(serializedPolicies);
+        
+        // Query with specific field selection (same as getPolicies)
+        const policies = await prisma.policies.findMany({
+            where: whereClause,
+            select: {
+                // Policy fields
+                id: true,
+                created_at: true,
+                policy_status: true,
+                total_price: true,
+                dealership_id: true,
+                effective_date: true,
+                products: true,
+                policy_term: true,
+                date_terminated: true,
+                province: true,
+                applicant_id: true,
+                seller_id: true,
+                policy_payment_method: true,
+                jwt_token: true,
+                
+                // Related data with specific fields
+                applicants: {
+                    select: {
+                        created_at: true,
+                        is_company: true,
+                        first_name_1: true,
+                        last_name_1: true,
+                        first_name_2: true,
+                        last_name_2: true,
+                        address_1: true,
+                        address_2: true,
+                        city: true,
+                        province: true,
+                        postal_code: true,
+                        email_1: true,
+                        email_2: true,
+                        phone_number_1: true,
+                        phone_number_2: true,
+                        customer_number: true,
+                        policy_ids: true
+                    }
+                },
+                pricing_details_pricing_details_policy_idTopolicies: {
+                    select: {
+                        seller_commission: true,
+                        retail_price_after_tax: true
+                    }
+                },
+                cancelation_details_policies_cancelation_details_idTocancelation_details: {
+                    select: {
+                        created_at: true,
+                        referral_clawback: true
+                    }
+                },
+                vehicle_details_policies_vehicle_details_idTovehicle_details: {
+                    select: {
+                        vin: true,
+                        make: true,
+                        model: true,
+                        series: true,
+                        body: true,
+                        bought_vehicle_value: true,
+                        vehicle_state: true,
+                        vehicle_purchase_year: true,
+                        odometer: true,
+                        model_year: true
+                    }
+                },
+                dealerships: {
+                    select: {
+                        province: true,
+                        address_1: true,
+                        address_2: true,
+                        city: true,
+                        postal_code: true,
+                        name: true,
+                        nickname: true
+                    }
+                }
+            },
+            orderBy: {
+                created_at: 'desc'
+            }
+        });
+        
+        console.log("policies found:", policies.length);
+        
+        // Rename the long relation field names to shorter ones (same as getPolicies)
+        const renamedPolicies = policies.map(policy => ({
+            ...policy,
+            pricing_details: policy.pricing_details_pricing_details_policy_idTopolicies,
+            cancelation_details: policy.cancelation_details_policies_cancelation_details_idTocancelation_details,
+            vehicle_details: policy.vehicle_details_policies_vehicle_details_idTovehicle_details,            
+            // Remove the long field names
+            pricing_details_pricing_details_policy_idTopolicies: undefined,
+            cancelation_details_policies_cancelation_details_idTocancelation_details: undefined,
+            vehicle_details_policies_vehicle_details_idTovehicle_details: undefined,
+        }));
+        
+        const formattedPolicies = formatDataForResponse(renamedPolicies);
+        res.json(formattedPolicies);
+    } catch (error) {
+        console.error('Error in getPoliciesByCustomerNumber:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
 });
 
 export const createPolicy = asyncHandler(async (req: any, res: Response): Promise<void> => {
@@ -244,17 +325,21 @@ export const createPolicy = asyncHandler(async (req: any, res: Response): Promis
             const newPolicyPriceDetails = await tx.pricing_details.create({
                 data: {
                     policy_id: newPolicy.id,
+                    products: selectedProducts.map((product: any) => product.productName).filter(name => name !== ''),
                     licenced_seller: isLicencedSeller?.licensed_seller || false,
                     coverage_term: parseInt(selectedProducts[0].productTerm),
                     underwriting_premium: productPriceDetails[0].priceAtMonth[0].underwritingPremium + (productPriceDetails[1]?.priceAtMonth[0].underwritingPremium || 0),
                     MGA_premium: productPriceDetails[0].priceAtMonth[0].mgaPayment + (productPriceDetails[1]?.priceAtMonth[0].mgaPayment || 0),
                     seller_commission: productPriceDetails[0].priceAtMonth[0].sellerCommission + (productPriceDetails[1]?.priceAtMonth[0].sellerCommission || 0),
                     IPT: productPriceDetails[0].priceAtMonth[0].ipt + (productPriceDetails[1]?.priceAtMonth[0].ipt || 0),
+                    dealership_referral_fee: productPriceDetails[0].priceAtMonth[0].referralPayment + (productPriceDetails[1]?.priceAtMonth[0].referralPayment || 0),
+                    dealership_referral_GST: productPriceDetails[0].priceAtMonth[0].referralPayment + (productPriceDetails[1]?.priceAtMonth[0].referralPayment || 0),
                     dealer_group_referral_fee: productPriceDetails[0].priceAtMonth[0].referralPayment + (productPriceDetails[1]?.priceAtMonth[0].referralPayment || 0),
                     dealer_group_referral_GST: productPriceDetails[0].priceAtMonth[0].referralPayment + (productPriceDetails[1]?.priceAtMonth[0].referralPayment || 0),
-                    retail_tax: productPriceDetails[0].priceAtMonth[0].retailTax + (productPriceDetails[1]?.priceAtMonth[0].retailTax || 0),
+                    cc_surcharge: 0,
                     transfer_credit: transferCredit || 0,
                     retail_price: productPriceDetails[0].priceAtMonth[0].retailBeforeTax + (productPriceDetails[1]?.priceAtMonth[0].retailBeforeTax || 0),
+                    retail_tax: productPriceDetails[0].priceAtMonth[0].retailTax + (productPriceDetails[1]?.priceAtMonth[0].retailTax || 0),
                     retail_price_after_tax: productPriceDetails[0].priceAtMonth[0].retailPriceAfterTax + (productPriceDetails[1]?.priceAtMonth[0].retailPriceAfterTax || 0) - (transferCredit || 0),
                 }
             });
@@ -308,10 +393,10 @@ export const createPolicy = asyncHandler(async (req: any, res: Response): Promis
                 where: { id: newPolicy.id },
                 data: { 
                     jwt_token: confirmationToken, 
-                    pricing_details: newPolicyPriceDetails.id, 
-                    product_price_details: { connect: productPriceDetailsIds.map((id: bigint) => ({ id })) },
-                    price_calculation_data: newPriceCalculationData.id,
-                    vehicle_details: newVehicleDetails.id,
+                    pricing_details_id: newPolicyPriceDetails.id, 
+                    price_calculation_data_id: newPriceCalculationData.id,
+                    vehicle_details_id: newVehicleDetails.id,
+                    product_pricing_details: productPriceDetailsIds,
                 }
             });
 
@@ -343,10 +428,10 @@ export const createPolicy = asyncHandler(async (req: any, res: Response): Promis
             transfered_from: result.transfered_from?.toString(),
             transfered_to: result.transfered_to?.toString(),
             primary_insurer_id: result.primary_insurer_id?.toString(),
-            vehicle_details: result.vehicle_details?.toString(),
-            price_calculation_data: result.price_calculation_data?.toString(),
-            pricing_details: result.pricing_details?.toString(),
-            cancelation_details: result.cancelation_details?.toString()
+            vehicle_details_id: result.vehicle_details_id?.toString(),
+            price_calculation_data_id: result.price_calculation_data_id?.toString(),
+            pricing_details_id: result.pricing_details_id?.toString(),
+            cancelation_details_id: result.cancelation_details_id?.toString()
         };
 
         // Send confirmation email (non-transactional)
@@ -435,10 +520,7 @@ const transferPolicyInternal = async (transfered_from: string, newPolicyId: stri
             }
         });
     }
-    console.log("got here tho");
-    console.log("About to update policy with transfered_from:", transfered_from);
-    console.log("newPolicyId:", newPolicyId);
-    console.log("cancellationDetails.id:", cancellationDetails.id);
+
     
     // Update the transfer from policy
     try {
@@ -447,7 +529,7 @@ const transferPolicyInternal = async (transfered_from: string, newPolicyId: stri
             data: {
                 policy_status: 5, // Transferred status
                 transfered_to: BigInt(newPolicyId),
-                cancelation_details: cancellationDetails.id
+                cancelation_details_id: cancellationDetails.id
             }
         });
         console.log("Successfully updated transfer from policy");
@@ -488,46 +570,167 @@ export const getPolicies = asyncHandler(async (req: any, res: Response): Promise
     const { requestedValues, additionalFilters } = req.body;
     
     try {
-        // Use the new maximum access system with values from the request body
-        const accessResult = getMaximumReadAccess(
-            user.roles,
-            requestedValues || { policies: 'all' },
-            additionalFilters || {},
-            user
-        );
+        // Build where clause based on user role
+        let whereClause: any = {};
         
-        if (!accessResult.success) {
-            res.status(403).json({ error: accessResult.error });
-            return;
+        // Get user's highest role for access control
+        const userRoles = user.roles || [];
+        const highestRole = Math.max(...userRoles);
+        
+        console.log("User roles:", userRoles, "Highest role:", highestRole);
+        
+        if (highestRole === 1) {
+            // Role 1: Only policies they are the seller_id and if they are active at that dealership
+            whereClause.seller_id = BigInt(user.id);
+            
+            // Get dealerships where user is active
+            const userDealerships = await prisma.seller_dealerships.findMany({
+                where: { seller_id: BigInt(user.id) },
+                select: { dealership_id: true }
+            });
+            
+            const dealershipIds = userDealerships.map(d => d.dealership_id);
+            if (dealershipIds.length > 0) {
+                whereClause.dealership_id = { in: dealershipIds };
+            } else {
+                // User has no active dealerships, return empty result
+                whereClause.id = { in: [] };
+            }
+            
+        } else if (highestRole === 2) {
+            // Role 2: All policies sold at dealerships they are active at
+            const userDealerships = await prisma.seller_dealerships.findMany({
+                where: { seller_id: BigInt(user.id) },
+                select: { dealership_id: true }
+            });
+            
+            const dealershipIds = userDealerships.map(d => d.dealership_id);
+            if (dealershipIds.length > 0) {
+                whereClause.dealership_id = { in: dealershipIds };
+            } else {
+                // User has no active dealerships, return empty result
+                whereClause.id = { in: [] };
+            }
+            
+        } else if (highestRole === 3) {
+            // Role 3: All policies sold with their dealergroup
+            whereClause.dealer_group_id = BigInt(user.dealer_group_id || 0);
+            
+        } else if (highestRole >= 4) {
+            // Role 4+: All policies (no additional filtering)
+            // whereClause remains empty
         }
         
-        const { where, include } = accessResult.clauses!;
+        console.log("Where clause:", whereClause);
         
-        console.log("where", where);
-        console.log("include", include);
-        
-        // Extract the policies where clause and merge with additional filters
-        const policiesWhere = where.policies || {};
-        const policiesInclude = include.policies || {};
-        
-        // Handle the case where we have a select clause instead of include
-        let queryOptions: any = {
-            where: policiesWhere
-        };
-        
-        if (policiesInclude && typeof policiesInclude === 'object' && 'select' in policiesInclude) {
-            // Use select instead of include
-            queryOptions.select = policiesInclude.select;
-        } else {
-            // Use include
-            queryOptions.include = policiesInclude;
-        }
-        
-        const policies = await prisma.policies.findMany(queryOptions);
+        // Query with specific field selection
+        const policies = await prisma.policies.findMany({
+            where: whereClause,
+            select: {
+                // Policy fields
+                id: true,
+                created_at: true,
+                policy_status: true,
+                total_price: true,
+                dealership_id: true,
+                effective_date: true,
+                products: true,
+                policy_term: true,
+                date_terminated: true,
+                province: true,
+                applicant_id: true,
+                
+                // Related data with specific fields
+                applicants: {
+                    select: {
+                        created_at: true,
+                        is_company: true,
+                        first_name_1: true,
+                        last_name_1: true,
+                        first_name_2: true,
+                        last_name_2: true,
+                        address_1: true,
+                        address_2: true,
+                        city: true,
+                        province: true,
+                        postal_code: true,
+                        email_1: true,
+                        email_2: true,
+                        phone_number_1: true,
+                        phone_number_2: true,
+                        customer_number: true,
+                        policy_ids: true
+                    }
+                },
+                pricing_details_pricing_details_policy_idTopolicies: {
+                    select: {
+                        seller_commission: true,
+                        retail_price_after_tax: true
+                    }
+                },
+                cancelation_details_policies_cancelation_details_idTocancelation_details: {
+                    select: {
+                        created_at: true,
+                        referral_clawback: true
+                    }
+                },
+                vehicle_details_policies_vehicle_details_idTovehicle_details: {
+                    select: {
+                        vin: true,
+                        make: true,
+                        model: true,
+                        series: true,
+                        body: true,
+                        bought_vehicle_value: true,
+                        vehicle_state: true,
+                        vehicle_purchase_year: true,
+                        odometer: true,
+                        model_year: true
+                    }
+                },
+                dealerships: {
+                    select: {
+                        province: true,
+                        address_1: true,
+                        address_2: true,
+                        city: true,
+                        postal_code: true,
+                        name: true,
+                        nickname: true
+                    }
+                },
+                accounts_policies_seller_idToaccounts: {
+                    select: {
+                        id: true,
+                        username: true,
+                        contacts_accounts_contact_idTocontacts: {
+                            select: {
+                                first_name: true,
+                                last_name: true
+                            }
+                        }
+                    }
+                }
+            }
+        });
 
-        console.log("policies", policies);
+        console.log("policies found:", policies.length);
         
-        const formattedPolicies = formatDataForResponse(policies);
+        // Rename the long relation field names to shorter ones
+        const renamedPolicies = policies.map(policy => ({
+            ...policy,
+            pricing_details: policy.pricing_details_pricing_details_policy_idTopolicies,
+            cancelation_details: policy.cancelation_details_policies_cancelation_details_idTocancelation_details,
+            vehicle_details: policy.vehicle_details_policies_vehicle_details_idTovehicle_details,
+            seller: policy.accounts_policies_seller_idToaccounts,
+            // Remove the long field names
+            pricing_details_pricing_details_policy_idTopolicies: undefined,
+            cancelation_details_policies_cancelation_details_idTocancelation_details: undefined,
+            vehicle_details_policies_vehicle_details_idTovehicle_details: undefined,
+            accounts_policies_seller_idToaccounts: undefined
+        }));
+        
+        const formattedPolicies = formatDataForResponse(renamedPolicies);
         res.json(formattedPolicies);
     } catch (error) {
         console.error('Error in getPolicies:', error);
@@ -536,65 +739,188 @@ export const getPolicies = asyncHandler(async (req: any, res: Response): Promise
 });
 
 export const getPolicy = asyncHandler(async (req: any, res: Response): Promise<void> => {
-    const policy = await prisma.policies.findFirst({
-        where: {
-            id: BigInt(req.params.id),
-            seller_id: req.user!.id
-        },
-        include: {
-            applicants: true,
-            dealerships: true,
-            vehicle_details_policies_vehicle_detailsTovehicle_details: true
+    const user = req.user!;
+    const policyId = BigInt(req.params.id);
+    
+    try {
+        // Build where clause based on user role (same logic as getPolicies)
+        let whereClause: any = {
+            id: policyId
+        };
+        
+        // Get user's highest role for access control
+        const userRoles = user.roles || [];
+        const highestRole = Math.max(...userRoles);
+        
+        console.log("User roles:", userRoles, "Highest role:", highestRole);
+        
+        if (highestRole === 1) {
+            // Role 1: Only policies they are the seller_id and if they are active at that dealership
+            whereClause.seller_id = BigInt(user.id);
+            
+            // Get dealerships where user is active
+            const userDealerships = await prisma.seller_dealerships.findMany({
+                where: { seller_id: BigInt(user.id) },
+                select: { dealership_id: true }
+            });
+            
+            const dealershipIds = userDealerships.map(d => d.dealership_id);
+            if (dealershipIds.length > 0) {
+                whereClause.dealership_id = { in: dealershipIds };
+            } else {
+                // User has no active dealerships, return not found
+                throw new CustomError('Policy not found', 404);
+            }
+            
+        } else if (highestRole === 2) {
+            // Role 2: All policies sold at dealerships they are active at
+            const userDealerships = await prisma.seller_dealerships.findMany({
+                where: { seller_id: BigInt(user.id) },
+                select: { dealership_id: true }
+            });
+            
+            const dealershipIds = userDealerships.map(d => d.dealership_id);
+            if (dealershipIds.length > 0) {
+                whereClause.dealership_id = { in: dealershipIds };
+            } else {
+                // User has no active dealerships, return not found
+                throw new CustomError('Policy not found', 404);
+            }
+            
+        } else if (highestRole === 3) {
+            // Role 3: All policies sold with their dealergroup
+            whereClause.dealer_group_id = BigInt(user.dealer_group_id || 0);
+            
+        } else if (highestRole >= 4) {
+            // Role 4+: All policies (no additional filtering beyond ID)
+            // whereClause remains as just { id: policyId }
         }
-    });
-    
-    if (!policy) {
-        throw new CustomError('Policy not found', 404);
+        
+        console.log("Where clause:", whereClause);
+        
+        // Query with specific field selection (same as getPolicies)
+        const policy = await prisma.policies.findFirst({
+            where: whereClause,
+            select: {
+                // Policy fields
+                id: true,
+                created_at: true,
+                policy_status: true,
+                total_price: true,
+                dealership_id: true,
+                effective_date: true,
+                products: true,
+                policy_term: true,
+                date_terminated: true,
+                province: true,
+                applicant_id: true,
+                seller_id: true,
+                policy_payment_method: true,
+                jwt_token: true,
+                
+                // Related data with specific fields
+                applicants: {
+                    select: {
+                        created_at: true,
+                        is_company: true,
+                        first_name_1: true,
+                        last_name_1: true,
+                        first_name_2: true,
+                        last_name_2: true,
+                        address_1: true,
+                        address_2: true,
+                        city: true,
+                        province: true,
+                        postal_code: true,
+                        email_1: true,
+                        email_2: true,
+                        phone_number_1: true,
+                        phone_number_2: true,
+                        customer_number: true,
+                        policy_ids: true
+                    }
+                },
+                pricing_details_pricing_details_policy_idTopolicies: {
+                    select: {
+                        seller_commission: true,
+                        retail_price_after_tax: true
+                    }
+                },
+                cancelation_details_policies_cancelation_details_idTocancelation_details: {
+                    select: {
+                        created_at: true,
+                        referral_clawback: true
+                    }
+                },
+                vehicle_details_policies_vehicle_details_idTovehicle_details: {
+                    select: {
+                        vin: true,
+                        make: true,
+                        model: true,
+                        series: true,
+                        body: true,
+                        bought_vehicle_value: true,
+                        vehicle_state: true,
+                        vehicle_purchase_year: true,
+                        odometer: true,
+                        model_year: true
+                    }
+                },
+                dealerships: {
+                    select: {
+                        province: true,
+                        address_1: true,
+                        address_2: true,
+                        city: true,
+                        postal_code: true,
+                        name: true,
+                        nickname: true
+                    }
+                },
+                accounts_policies_seller_idToaccounts: {
+                    select: {
+                        id: true,
+                        username: true,
+                        contacts_accounts_contact_idTocontacts: {
+                            select: {
+                                first_name: true,
+                                last_name: true
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        if (!policy) {
+            throw new CustomError('Policy not found', 404);
+        }
+        
+        console.log("policy found:", policy.id);
+        
+        // Rename the long relation field names to shorter ones (same as getPolicies)
+        const renamedPolicy = {
+            ...policy,
+            pricing_details: policy.pricing_details_pricing_details_policy_idTopolicies,
+            cancelation_details: policy.cancelation_details_policies_cancelation_details_idTocancelation_details,
+            vehicle_details: policy.vehicle_details_policies_vehicle_details_idTovehicle_details,
+            seller: policy.accounts_policies_seller_idToaccounts,
+            // Remove the long field names
+            pricing_details_pricing_details_policy_idTopolicies: undefined,
+            cancelation_details_policies_cancelation_details_idTocancelation_details: undefined,
+            vehicle_details_policies_vehicle_details_idTovehicle_details: undefined,
+            accounts_policies_seller_idToaccounts: undefined
+        };
+        
+        const formattedPolicy = formatDataForResponse(renamedPolicy);
+        res.json(formattedPolicy);
+    } catch (error) {
+        console.error('Error in getPolicy:', error);
+        if (error instanceof CustomError) {
+            throw error;
+        }
+        res.status(500).json({ error: 'Internal server error' });
     }
-    
-    // Convert BigInt fields to strings for JSON serialization
-    const serializedPolicy = {
-        id: policy.id.toString(),
-        applicant_id: policy.applicant_id.toString(),
-        seller_id: policy.seller_id?.toString(),
-        dealership_id: policy.dealership_id?.toString(),
-        created_by_id: policy.created_by_id?.toString(),
-        dealer_group_id: policy.dealer_group_id?.toString(),
-        transfered_from: policy.transfered_from?.toString(),
-        transfered_to: policy.transfered_to?.toString(),
-        primary_insurer_id: policy.primary_insurer_id?.toString(),
-        price_calculation_data: policy.price_calculation_data?.toString(),
-        pricing_details: policy.pricing_details?.toString(),
-        cancelation_details: policy.cancelation_details?.toString(),
-        // Include non-BigInt fields
-        policy_status: policy.policy_status,
-        total_price: policy.total_price,
-        policy_term: policy.policy_term,
-        products: policy.products,
-        province: policy.province,
-        effective_date: policy.effective_date,
-        policy_payment_method: policy.policy_payment_method,
-        jwt_token: policy.jwt_token,
-        created_at: policy.created_at,
-        applicants: policy.applicants ? {
-            ...policy.applicants,
-            id: policy.applicants.id.toString(),
-            customer_number: policy.applicants.customer_number.toString(),
-            policy_ids: policy.applicants.policy_ids.map((id: bigint) => id.toString())
-        } : null,
-        vehicle_details_policies_vehicle_detailsTovehicle_details: policy.vehicle_details_policies_vehicle_detailsTovehicle_details ? {
-            ...policy.vehicle_details_policies_vehicle_detailsTovehicle_details,
-            id: policy.vehicle_details_policies_vehicle_detailsTovehicle_details.id.toString(),
-            from_policy: policy.vehicle_details_policies_vehicle_detailsTovehicle_details.from_policy.toString()
-        } : null,
-        dealerships: policy.dealerships ? {
-            ...policy.dealerships,
-            id: policy.dealerships.id.toString(),
-            dealer_group_id: policy.dealerships.dealer_group_id?.toString()
-        } : null
-    };
-    
-    res.json(serializedPolicy);
 });
 
 export const updatePolicy = asyncHandler(async (req: any, res: Response): Promise<void> => {
@@ -1082,7 +1408,7 @@ export const cancelPolicy = asyncHandler(async (req: any, res: Response): Promis
             // Update policy with cancellation_details_id
             await tx.policies.update({
                 where: { id: policy.id },
-                data: { cancelation_details: cancellationDetails.id }
+                data: { cancelation_details_id: cancellationDetails.id }
             });
             
             return { cancellationDetails, productRefundDetails, totalRefund: refundData.refundAmount };

@@ -8,7 +8,7 @@
         </button>
       </div>
       
-      <button @click="transferPolicy">Transfer</button>
+      <button v-if="policyForm.status.value === '1'" @click="transferPolicy">Transfer</button>
 
       <form @submit.prevent="handleSubmit" class="modal-form">
         <!-- Policy Information -->
@@ -45,9 +45,17 @@
                 :class="{ 'error': shouldShowError('status') }"
                 @blur="markFieldAsTouched('status')"
               >
-                <option value="0">Pending</option>
-                <option value="1">Confirmed</option>
-                <option value="2">Cancelled</option>
+                <option value="0">New Pending</option>
+                <option value="1">Active</option>
+                <option value="2">Expired</option>
+                <option value="3">Cancel Pending</option>
+                <option value="4">Canceled</option>
+                <option value="5">Transferred</option>
+                <option value="6">Reinstated</option>
+                <option value="7">Void</option>
+                <option value="8">Lapsed</option>
+                <option value="9">Claim Pending</option>
+                <option value="10">Future</option>
               </select>
               <div v-if="shouldShowError('status')" class="error-message">{{ policyForm.status.validationErrors }}</div>
             </div>
@@ -407,8 +415,47 @@
           </div>
         </div>
 
-        <!-- Debt Information -->
         <div class="form-section">
+          <h4 class="section-title">Seller Information</h4>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="seller_id" class="form-label">
+                <User class="label-icon" />
+                Seller ID *
+              </label>
+              <input
+                id="seller_id"
+                v-model="policyForm.seller_id.value"
+                type="text"
+                class="form-input"
+                :class="{ 'error': shouldShowError('seller_id') }"
+                placeholder="Enter seller ID"
+                @blur="markFieldAsTouched('seller_id')"
+              />
+              <div v-if="shouldShowError('seller_id')" class="error-message">{{ policyForm.seller_id.validationErrors }}</div>
+            </div>
+            <div class="form-group">
+              <label for="seller_name" class="form-label">
+                <User class="label-icon" />
+                Seller Name *
+              </label>
+              <input
+                id="seller_name"
+                v-model="policyForm.seller_name.value"
+                type="text"
+                class="form-input"
+                :class="{ 'error': shouldShowError('seller_name') }"
+                placeholder="Enter seller name"
+                @blur="markFieldAsTouched('seller_name')"
+              />
+              <div v-if="shouldShowError('seller_name')" class="error-message">{{ policyForm.seller_name.validationErrors }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Debt Information -->
+        <!-- <div class="form-section">
           <h4 class="section-title">Debt Information</h4>
           
           <div class="form-row">
@@ -488,7 +535,7 @@
               placeholder="0.00"
             />
           </div>
-        </div>
+        </div> -->
         
         <div class="modal-actions">
           <button type="button" @click="$emit('close')" class="btn btn-secondary">
@@ -565,6 +612,10 @@ const policyForm = reactive({
   debt_term: {value: '', touched: false, validationErrors: '', required: false},
   loan_payments_monthly: {value: '', touched: false, validationErrors: '', required: false},
   residual_value: {value: '', touched: false, validationErrors: '', required: false},
+  
+  // Seller fields
+  seller_id: {value: '', touched: false, validationErrors: '', required: true},
+  seller_name: {value: '', touched: false, validationErrors: '', required: true},
 })
 
 const transferPolicy = () => {
@@ -643,15 +694,17 @@ const handleSubmit = () => {
 // Load data when component mounts
 onMounted(() => {
   if (props.policy) {
+    console.log('Modal policy data:', props.policy)
+    
     // Load policy data
     policyForm.policy_number.value = props.policy.id?.toString().padStart(6, '0') || ''
-    policyForm.status.value = props.policy.status?.toString() || '0'
+    policyForm.status.value = props.policy.policy_status?.toString() || '0'
     policyForm.policy_term.value = props.policy.policy_term?.toString() || ''
-    policyForm.policy_price.value = props.policy.policy_price?.toString() || ''
+    policyForm.policy_price.value = props.policy.total_price?.toString() || ''
     
-    // Load applicant data
-    if (props.policy.applicants && props.policy.applicants.length > 0) {
-      const applicant = props.policy.applicants[0]
+    // Load applicant data (applicants is an object, not an array)
+    if (props.policy.applicants) {
+      const applicant = props.policy.applicants
       policyForm.first_name_1.value = applicant.first_name_1 || ''
       policyForm.last_name_1.value = applicant.last_name_1 || ''
       policyForm.first_name_2.value = applicant.first_name_2 || ''
@@ -665,20 +718,24 @@ onMounted(() => {
       policyForm.postal_code.value = applicant.postal_code || ''
     }
     
-    // Load vehicle data
-    policyForm.VIN.value = props.policy.VIN || ''
-    policyForm.odometer.value = props.policy.odometer?.toString() || ''
-    policyForm.make.value = props.policy.make || ''
-    policyForm.model.value = props.policy.model || ''
-    policyForm.model_series.value = props.policy.model_series || ''
-    policyForm.model_year.value = props.policy.model_year?.toString() || ''
+    // Load vehicle data (vehicle_details is an object)
+    if (props.policy.vehicle_details) {
+      policyForm.VIN.value = props.policy.vehicle_details.vin || ''
+      policyForm.odometer.value = props.policy.vehicle_details.odometer?.toString() || ''
+      policyForm.make.value = props.policy.vehicle_details.make || ''
+      policyForm.model.value = props.policy.vehicle_details.model || ''
+      policyForm.model_series.value = props.policy.vehicle_details.series || ''
+      policyForm.model_year.value = props.policy.vehicle_details.model_year?.toString() || ''
+    }
     
-    // Load debt data
+    // Load debt data (these fields might not be available in the current API response)
     policyForm.total_debt.value = props.policy.total_debt?.toString() || ''
     policyForm.debt_interest_rate.value = props.policy.debt_interest_rate?.toString() || ''
     policyForm.debt_term.value = props.policy.debt_term?.toString() || ''
     policyForm.loan_payments_monthly.value = props.policy.loan_payments_monthly?.toString() || ''
     policyForm.residual_value.value = props.policy.residual_value?.toString() || ''
+    policyForm.seller_id.value = props.policy.seller?.id?.toString() || ''
+    policyForm.seller_name.value = props.policy.seller?.username || ''
   }
 })
 </script>

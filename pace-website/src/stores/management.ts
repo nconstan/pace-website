@@ -36,6 +36,7 @@ export const useManagementStore = defineStore('management', () => {
         const data = await policyService.getPolicies({
           requestedValues: {
             policies: 'all',
+            applicants: 'all',
             pricing_details: { seller_commission: true},
             cancelation_details: 'all'
           },

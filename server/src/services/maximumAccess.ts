@@ -295,6 +295,59 @@ export const getMaximumReadAccess = (roles: number[], requestedValues: any, addi
         }
     }
 
+    // Handle related entities - nest them properly
+    const processedIncludeClause: any = {};
+    
+    // If policies is requested and applicants is also requested, nest applicants inside policies
+    if (includeClause.policies && includeClause.applicants) {
+        processedIncludeClause.policies = {
+            include: {
+                applicants: includeClause.applicants
+            }
+        };
+        // Remove applicants from top level since it's now nested
+        delete includeClause.applicants;
+    }
+    
+    // If vehicle_details is requested and policies is also requested, nest vehicle_details inside policies
+    if (includeClause.policies && includeClause.vehicle_details) {
+        if (!processedIncludeClause.policies) {
+            processedIncludeClause.policies = {};
+        }
+        if (!processedIncludeClause.policies.include) {
+            processedIncludeClause.policies.include = {};
+        }
+        processedIncludeClause.policies.include.vehicle_details = includeClause.vehicle_details;
+        delete includeClause.vehicle_details;
+    }
+    
+    // If pricing_details is requested and policies is also requested, nest pricing_details inside policies
+    if (includeClause.policies && includeClause.pricing_details) {
+        if (!processedIncludeClause.policies) {
+            processedIncludeClause.policies = {};
+        }
+        if (!processedIncludeClause.policies.include) {
+            processedIncludeClause.policies.include = {};
+        }
+        processedIncludeClause.policies.include.pricing_details = includeClause.pricing_details;
+        delete includeClause.pricing_details;
+    }
+    
+    // If cancelation_details is requested and policies is also requested, nest cancelation_details inside policies
+    if (includeClause.policies && includeClause.cancelation_details) {
+        if (!processedIncludeClause.policies) {
+            processedIncludeClause.policies = {};
+        }
+        if (!processedIncludeClause.policies.include) {
+            processedIncludeClause.policies.include = {};
+        }
+        processedIncludeClause.policies.include.cancelation_details = includeClause.cancelation_details;
+        delete includeClause.cancelation_details;
+    }
+    
+    // Merge remaining include clauses
+    Object.assign(processedIncludeClause, includeClause);
+
     // Process additional filters
     for (const [entity, filters] of Object.entries(additionalFilters || {})) {
         const entityPermissions = permissions[entity as keyof typeof permissions];
@@ -331,7 +384,7 @@ export const getMaximumReadAccess = (roles: number[], requestedValues: any, addi
         success: true,
         clauses: {
             where: whereClause,
-            include: includeClause
+            include: processedIncludeClause
         }
     };
 };
